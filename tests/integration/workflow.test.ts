@@ -151,7 +151,7 @@ describe('public library', () => {
     const bad = await publicList.GET(request('/api/resources?semester=99'));
     expect(bad.status).toBe(400);
 
-    const facets = await body(await publicFacets.GET(request('/api/resources/facets')));
+    const facets = await body(await publicFacets.GET());
     expect(facets.resourceTypes).toEqual(['pyq']);
     expect(facets.departments).toEqual(['cse']);
   });

@@ -72,6 +72,7 @@ export function request(
 
 export const params = <T extends Record<string, string>>(p: T) => ({ params: Promise.resolve(p) });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test responses are asserted field by field
 export async function body<T = any>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }

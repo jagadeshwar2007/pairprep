@@ -1,4 +1,6 @@
 import 'server-only';
+import { connection } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { ZodError, type ZodType } from 'zod';
 import { formatZodError } from '@/lib/resources/validation';
 
@@ -38,12 +40,17 @@ export function errorResponse(err: unknown) {
   return json({ error: { code: 'internal', message: 'Something went wrong. Please try again.' } }, { status: 500 });
 }
 
-/** Wraps a route handler so thrown ApiErrors and validation errors become JSON responses. */
+/**
+ * Wraps a route handler: always renders at request time (API data must never be baked
+ * into the build), and turns ApiErrors / validation errors into JSON responses.
+ */
 export function handle<Args extends unknown[]>(fn: (...args: Args) => Promise<Response>) {
   return async (...args: Args): Promise<Response> => {
+    await connection();
     try {
       return await fn(...args);
     } catch (err) {
+      unstable_rethrow(err);
       return errorResponse(err);
     }
   };

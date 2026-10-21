@@ -57,7 +57,7 @@ export function SubjectCard({ subject, resourceCount = 0 }: SubjectCardProps) {
                 {resourceCount} Resources available
               </span>
             ) : (
-              'Curated study sets'
+              'Notes, PYQs and more'
             )}
           </span>
           <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">

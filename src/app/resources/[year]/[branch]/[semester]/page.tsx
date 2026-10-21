@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ACADEMIC_YEARS, BRANCHES, SUBJECTS } from '@/data/academicData';
-import { DEMO_RESOURCES } from '@/data/resourcesData';
 import { Breadcrumbs } from '@/components/academic/Breadcrumbs';
 import { SubjectCard } from '@/components/academic/SubjectCard';
 import { Badge } from '@/components/ui/Badge';
@@ -113,12 +112,9 @@ export default async function SemesterSubjectsPage({
 
         {semesterSubjects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {semesterSubjects.map((sub) => {
-              const resCount = DEMO_RESOURCES.filter((r) => r.subjectId === sub.id).length;
-              return (
-                <SubjectCard key={sub.id} subject={sub} resourceCount={resCount} />
-              );
-            })}
+            {semesterSubjects.map((sub) => (
+              <SubjectCard key={sub.id} subject={sub} />
+            ))}
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center bg-white dark:bg-slate-900">

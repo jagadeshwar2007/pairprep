@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { SUBJECTS, BRANCHES, ACADEMIC_YEARS } from '@/data/academicData';
-import { DEMO_RESOURCES, CATEGORY_LABELS } from '@/data/resourcesData';
+import { RESOURCE_TYPE_INFO, departmentLabel } from '@/lib/resources/constants';
+import { api } from '@/lib/api/client';
+import type { Paginated, PublicResource } from '@/lib/resources/types';
 import { OFFICIAL_ACADEMIC_CALENDAR_EVENTS, CATEGORY_CONFIG } from '@/data/academicCalendarData';
 import { Search, BookOpen, FileText, ArrowRight, Layers, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
@@ -16,7 +19,33 @@ interface SearchModalProps {
 }
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
+  const router = useRouter();
   const [query, setQuery] = useState('');
+  const [found, setFound] = useState<{ q: string; items: PublicResource[] }>({ q: '', items: [] });
+  const trimmed = query.trim();
+  const resources = useMemo(() => (trimmed && found.q === trimmed ? found.items : []), [trimmed, found]);
+  const resourcesLoading = Boolean(trimmed) && found.q !== trimmed;
+
+  // Published resources come from the API; subjects, branches and calendar are local reference data.
+  useEffect(() => {
+    if (!trimmed) return;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      api<Paginated<PublicResource>>(`/api/resources?q=${encodeURIComponent(trimmed)}&pageSize=5`, { auth: false })
+        .then((r) => !cancelled && setFound({ q: trimmed, items: r.items }))
+        .catch(() => !cancelled && setFound({ q: trimmed, items: [] }));
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [trimmed]);
+
+  const openLibrary = () => {
+    const q = query.trim();
+    onClose();
+    router.push(q ? `/library?q=${encodeURIComponent(q)}` : '/library');
+  };
 
   const filteredResults = useMemo(() => {
     if (!query.trim()) return { subjects: [], resources: [], branches: [], calendarEvents: [] };
@@ -27,13 +56,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         s.name.toLowerCase().includes(q) ||
         s.code.toLowerCase().includes(q) ||
         s.topics.some((t) => t.toLowerCase().includes(q))
-    ).slice(0, 5);
-
-    const matchedResources = DEMO_RESOURCES.filter(
-      (r) =>
-        r.title.toLowerCase().includes(q) ||
-        r.subjectName.toLowerCase().includes(q) ||
-        r.tags?.some((t) => t.toLowerCase().includes(q))
     ).slice(0, 5);
 
     const matchedBranches = BRANCHES.filter(
@@ -52,11 +74,11 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
     return {
       subjects: matchedSubjects,
-      resources: matchedResources,
+      resources,
       branches: matchedBranches,
       calendarEvents: matchedCalendarEvents,
     };
-  }, [query]);
+  }, [query, resources]);
 
   const hasResults =
     filteredResults.subjects.length > 0 ||
@@ -67,17 +89,24 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="2xl">
       <div className="space-y-4">
-        <div className="relative">
+        <form
+          className="relative"
+          onSubmit={(e) => {
+            e.preventDefault();
+            openLibrary();
+          }}
+        >
           <Input
             autoFocus
-            type="text"
+            type="search"
+            aria-label="Search PairPrep"
             placeholder="Search subjects, PYQs, branches (e.g. Data Structures, OS, CSE, Math)..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             icon={<Search className="h-5 w-5" />}
             className="h-12 text-base rounded-xl"
           />
-        </div>
+        </form>
 
         {query.trim().length === 0 ? (
           <div className="py-8 text-center">
@@ -100,7 +129,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           </div>
         ) : !hasResults ? (
           <div className="py-8 text-center text-sm text-slate-500">
-            No matching resources or subjects found for &ldquo;{query}&rdquo;.
+            {resourcesLoading ? 'Searching…' : <>No matching resources or subjects found for &ldquo;{query}&rdquo;.</>}
           </div>
         ) : (
           <div className="max-h-[60vh] overflow-y-auto space-y-4 divide-y divide-slate-100 dark:divide-slate-800 pr-1">
@@ -144,14 +173,17 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             {/* Resources */}
             {filteredResults.resources.length > 0 && (
               <div className="pt-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                  Papers & Materials ({filteredResults.resources.length})
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Papers & Materials</p>
+                  <button onClick={openLibrary} className="text-xs text-indigo-600 hover:underline font-medium cursor-pointer">
+                    See all in library →
+                  </button>
+                </div>
                 <div className="space-y-1.5">
                   {filteredResults.resources.map((res) => (
                     <Link
                       key={res.id}
-                      href={`/resources/${res.yearId}/${res.branchId}/${res.semester}/${res.subjectId}`}
+                      href={`/library/${res.id}`}
                       onClick={onClose}
                       className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 group transition-colors"
                     >
@@ -165,10 +197,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Badge variant="primary" size="sm">
-                              {CATEGORY_LABELS[res.category]?.label || res.category}
+                              {RESOURCE_TYPE_INFO[res.resourceType].shortLabel}
                             </Badge>
                             <span className="text-xs text-slate-500">
-                              {res.subjectName} ({res.branchCode})
+                              {res.subject} ({departmentLabel(res.department)} · Sem {res.semester})
                             </span>
                           </div>
                         </div>

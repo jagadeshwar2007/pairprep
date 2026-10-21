@@ -1,7 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { ACADEMIC_YEARS, BRANCHES, SUBJECTS } from '@/data/academicData';
-import { DEMO_RESOURCES } from '@/data/resourcesData';
 import { Breadcrumbs } from '@/components/academic/Breadcrumbs';
 import { SubjectResourceView } from '@/components/resources/SubjectResourceView';
 import { Badge } from '@/components/ui/Badge';
@@ -51,9 +50,6 @@ export default async function SubjectDetailsPage({ params }: SubjectDetailsPageP
     notFound();
   }
 
-  // Get resources for this subject
-  const subjectResources = DEMO_RESOURCES.filter((r) => r.subjectId === subject.id);
-
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <Breadcrumbs
@@ -84,9 +80,6 @@ export default async function SubjectDetailsPage({ params }: SubjectDetailsPageP
             </div>
           </div>
 
-          <span className="text-xs font-medium text-slate-500">
-            {subjectResources.length} Materials catalogued
-          </span>
         </div>
 
         <div>
@@ -121,7 +114,7 @@ export default async function SubjectDetailsPage({ params }: SubjectDetailsPageP
       </div>
 
       {/* Interactive Category Filter and Resources Grid */}
-      <SubjectResourceView subject={subject} resources={subjectResources} />
+      <SubjectResourceView subject={subject} />
     </div>
   );
 }

@@ -144,17 +144,17 @@ export function Footer() {
 
               <div className="pt-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 p-2.5 border border-amber-200/60 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-300">
                 <span className="font-semibold block mb-0.5">Disclaimer:</span>
-                Sample and demonstration data shown for platform preview. Not an official publication of MNNIT administration.
+                Student-run project. Not an official publication of MNNIT administration.
               </div>
             </div>
           </div>
 
           <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <p>© 2026 Pairprep. Built for the student community at MNNIT Allahabad.</p>
+            <p>© 2026 PairPrep. Built for the student community at MNNIT Allahabad.</p>
             <div className="flex items-center gap-4">
               <span>Crafted for engineering peers</span>
               <span>•</span>
-              <span className="text-slate-400">Milestone 1 Release</span>
+              <span className="text-slate-400">MVP</span>
             </div>
           </div>
         </div>
@@ -172,9 +172,9 @@ export function Footer() {
             <div className="h-10 w-10 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
               ✓
             </div>
-            <h4 className="font-semibold text-slate-900 dark:text-white">Feedback Logged!</h4>
+            <h4 className="font-semibold text-slate-900 dark:text-white">Thanks for the suggestion</h4>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Thank you for helping us refine Pairprep for MNNIT students.
+              Feedback collection is not connected yet, so this message was not stored or sent anywhere.
             </p>
             <Button variant="primary" onClick={() => setFeedbackOpen(false)} className="w-full mt-2">
               Close

@@ -35,38 +35,7 @@ export interface Subject {
   instructorNote?: string;
 }
 
-export type ResourceCategory =
-  | 'notes'
-  | 'pyq'
-  | 'midsem'
-  | 'endsem'
-  | 'lab'
-  | 'practice'
-  | 'syllabus'
-  | 'reference';
-
-export interface ResourceItem {
-  id: string;
-  title: string;
-  subjectId: string;
-  subjectName: string;
-  subjectCode: string;
-  branchId: string;
-  branchCode: string;
-  semester: number;
-  yearId: AcademicYearId;
-  category: ResourceCategory;
-  fileType: 'pdf' | 'doc' | 'zip' | 'link';
-  fileSize?: string;
-  downloadUrl: string;
-  previewUrl?: string;
-  author: string;
-  uploadedAt: string;
-  downloadsCount: number;
-  verified: boolean;
-  description?: string;
-  tags?: string[];
-}
+// Library resource types live in src/lib/resources/types.ts.
 
 export interface PracticeQuestion {
   id: string;

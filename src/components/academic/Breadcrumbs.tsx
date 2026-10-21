@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ChevronRight, Home } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 export interface BreadcrumbItem {
   label: string;
@@ -13,31 +13,24 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
   return (
-    <nav aria-label="Breadcrumb" className="py-3">
-      <ol className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
         <li>
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            <Home className="h-3.5 w-3.5" />
-            <span className="sr-only">Home</span>
+          <Link href="/" className="inline-block rounded px-1 py-2 hover:text-indigo-700 hover:underline">
+            Home
           </Link>
         </li>
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <li key={index} className="flex items-center gap-1.5">
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <li key={index} className="flex items-center gap-1 min-w-0">
+              <ChevronRight className="h-3 w-3 shrink-0 text-slate-300" aria-hidden="true" />
               {isLast || !item.href ? (
-                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[200px] sm:max-w-none">
+                <span aria-current={isLast ? 'page' : undefined} className="truncate py-2 font-medium text-slate-800 max-w-[16rem]">
                   {item.label}
                 </span>
               ) : (
-                <Link
-                  href={item.href}
-                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors truncate max-w-[150px] sm:max-w-none"
-                >
+                <Link href={item.href} className="inline-block rounded px-1 py-2 hover:text-indigo-700 hover:underline truncate max-w-[10rem] sm:max-w-none">
                   {item.label}
                 </Link>
               )}

@@ -1,22 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { Branch } from '@/types';
-import { Card } from '@/components/ui/Card';
-import {
-  Laptop,
-  Cpu,
-  Zap,
-  Wrench,
-  Building2,
-  FlaskConical,
-  Factory,
-  Dna,
-  ArrowRight,
-} from 'lucide-react';
+import { Laptop, Cpu, Zap, Wrench, Building2, FlaskConical, Factory, Dna, Layers, ArrowRight } from 'lucide-react';
 
 interface BranchCardProps {
   branch: Branch;
-  yearId?: string; // If passed, navigate to specific year branch
+  yearId?: string;
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -28,43 +17,30 @@ const ICON_MAP: Record<string, React.ElementType> = {
   FlaskConical,
   Factory,
   Dna,
+  Layers,
 };
 
 export function BranchCard({ branch, yearId = 'second-year' }: BranchCardProps) {
-  const IconComponent = ICON_MAP[branch.iconName] || Laptop;
+  const Icon = ICON_MAP[branch.iconName] || Laptop;
 
   return (
-    <Link href={`/resources/${yearId}/${branch.id}`} className="group block focus:outline-none">
-      <Card
-        hoverEffect
-        className="h-full flex flex-col justify-between transition-all duration-200 group-hover:border-indigo-400 group-hover:shadow-md dark:group-hover:border-indigo-500"
-      >
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div
-              className={`h-11 w-11 rounded-xl flex items-center justify-center border ${branch.color} group-hover:scale-105 transition-transform`}
-            >
-              <IconComponent className="h-5 w-5" />
-            </div>
-            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-              {branch.code}
-            </span>
-          </div>
-
-          <h4 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-            {branch.name}
-          </h4>
-
-          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-            {branch.description}
-          </p>
+    <Link href={`/resources/${yearId}/${branch.id}`} className="group block h-full rounded-xl">
+      <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(20,23,31,0.04)] transition-colors group-hover:border-indigo-300">
+        <div className="flex items-center justify-between">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700 group-hover:bg-indigo-50 group-hover:text-indigo-700">
+            <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+          </span>
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-medium text-slate-600">
+            {branch.code}
+          </span>
         </div>
-
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-medium text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-          <span>View Semesters</span>
-          <ArrowRight className="h-3.5 w-3.5 transform transition-transform group-hover:translate-x-1" />
-        </div>
-      </Card>
+        <h3 className="mt-3 text-[15px] font-semibold leading-snug text-slate-900">{branch.name}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500 line-clamp-2">{branch.description}</p>
+        <span className="mt-auto flex items-center gap-1 pt-3 text-xs font-medium text-indigo-700">
+          View semesters
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </span>
+      </article>
     </Link>
   );
 }

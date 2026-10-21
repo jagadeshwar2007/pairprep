@@ -6,12 +6,13 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Notice } from '@/components/ui/Feedback';
 import { getAcademicSemesterContext } from '@/lib/calendarAttendanceHelper';
+import { computeAttendance } from '@/lib/academicMath';
 import { SemesterType } from '@/types/calendar';
 import {
   CheckCircle,
   AlertTriangle,
-  Info,
   RotateCcw,
   Percent,
   Calendar,
@@ -27,28 +28,16 @@ export function AttendanceCalculator() {
 
   const semesterContext = getAcademicSemesterContext(selectedSemester);
 
-  const safeAttended = Math.max(0, Number(attended) || 0);
-  const safeTotal = Math.max(0, Number(total) || 0);
-  const targetPct = Math.min(100, Math.max(1, Number(minPercentage) || 75));
-
-  // Current percentage
-  const currentPercentage =
-    safeTotal > 0 ? (safeAttended / safeTotal) * 100 : 0;
-  const isSatisfied = currentPercentage >= targetPct;
-
-  // If attended >= target: calculate how many classes can be missed:
-  // (attended) / (total + x) >= target/100  =>  x <= (attended * 100 / target) - total
-  const canSkip =
-    safeTotal > 0 && isSatisfied
-      ? Math.floor((safeAttended * 100) / targetPct - safeTotal)
-      : 0;
-
-  // If attended < target: calculate how many consecutive classes must be attended:
-  // (attended + y) / (total + y) >= target/100  =>  y >= (target*total - 100*attended) / (100 - target)
-  const mustAttend =
-    safeTotal > 0 && !isSatisfied && targetPct < 100
-      ? Math.ceil((targetPct * safeTotal - 100 * safeAttended) / (100 - targetPct))
-      : 0;
+  const {
+    attended: safeAttended,
+    total: safeTotal,
+    target: targetPct,
+    percentage: currentPercentage,
+    isSatisfied,
+    canSkip,
+    mustAttend,
+    unreachable,
+  } = computeAttendance(attended, total, minPercentage);
 
   const handleReset = () => {
     setAttended(0);
@@ -58,13 +47,9 @@ export function AttendanceCalculator() {
 
   return (
     <div className="space-y-6">
-      {/* Assumptions Banner */}
-      <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/40 p-4 text-xs text-indigo-900 dark:text-indigo-200 flex gap-3">
-        <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold">MNNIT Attendance Rule Assumption:</span> Most academic departments at MNNIT Allahabad mandate a minimum of 75% attendance to be eligible for End-Semester examinations (with medical/extenuating provisions permitting down to 65% on Dean approvals). Formulas are configurable below.
-        </div>
-      </div>
+      <Notice title="Assumption, not an official rule">
+        <span>The target defaults to 75%, a common requirement, but rules differ by department and situation. Confirm yours with your department before relying on this.</span>
+      </Notice>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Input Panel */}
@@ -141,7 +126,7 @@ export function AttendanceCalculator() {
         </Card>
 
         {/* Results Panel */}
-        <Card className="flex flex-col justify-between space-y-5 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
+        <Card className="bg-white flex flex-col justify-between space-y-5">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -209,8 +194,14 @@ export function AttendanceCalculator() {
                   <span>Attendance shortage warning</span>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  You must attend the next <strong className="text-rose-600 dark:text-rose-400 text-sm">{mustAttend}</strong> consecutive{' '}
-                  {mustAttend === 1 ? 'class' : 'classes'} without missing any to restore your attendance to {targetPct}%.
+                  {unreachable ? (
+                    <>A {targetPct}% target cannot be restored once a class has been missed.</>
+                  ) : (
+                    <>
+                      You must attend the next <strong className="text-rose-600 dark:text-rose-400 text-sm">{mustAttend}</strong> consecutive{' '}
+                      {mustAttend === 1 ? 'class' : 'classes'} without missing any to restore your attendance to {targetPct}%.
+                    </>
+                  )}
                 </p>
               </div>
             )}
@@ -218,7 +209,7 @@ export function AttendanceCalculator() {
         </Card>
       </div>
 
-      {/* Official MNNIT Academic Calendar Context & Decoupling Notice */}
+      {/* Calendar context */}
       <Card className="p-5 sm:p-6 border-slate-200 dark:border-slate-800 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
@@ -227,10 +218,10 @@ export function AttendanceCalculator() {
             </div>
             <div>
               <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                Official MNNIT Academic Calendar Benchmarks (2026–27)
+                Academic calendar dates (2026–27)
               </h4>
               <p className="text-[11px] text-slate-500">
-                Official semester boundaries, instructional counts, and short attendance warning dates.
+                Semester boundaries and instructional days from the calendar page.
               </p>
             </div>
           </div>

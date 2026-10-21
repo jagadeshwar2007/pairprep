@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { History } from 'lucide-react';
+import { evaluateExpression, formatResult } from '@/lib/expression';
 
 export function ScientificCalculator() {
   const [display, setDisplay] = useState('0');
@@ -11,7 +12,7 @@ export function ScientificCalculator() {
   const [isDegree, setIsDegree] = useState(true);
 
   const appendToExpr = (val: string) => {
-    if (display === '0' && !isNaN(Number(val))) {
+    if (display === 'Error' || (display === '0' && !isNaN(Number(val)))) {
       setDisplay(val);
       setExpression(val);
     } else {
@@ -36,43 +37,17 @@ export function ScientificCalculator() {
   };
 
   const safeEvaluate = () => {
+    if (!expression.trim()) return;
     try {
-      let expr = expression;
-      if (!expr.trim()) return;
-
-      // Replace symbols with JS Math equivalents
-      expr = expr.replace(/π/g, 'Math.PI');
-      expr = expr.replace(/e/g, 'Math.E');
-      expr = expr.replace(/\^/g, '**');
-      expr = expr.replace(/×/g, '*');
-      expr = expr.replace(/÷/g, '/');
-
-      // Functions
-      const degMultiplier = isDegree ? ' * (Math.PI / 180)' : '';
-
-      expr = expr.replace(/sin\(([^)]+)\)/g, `Math.sin(($1)${degMultiplier})`);
-      expr = expr.replace(/cos\(([^)]+)\)/g, `Math.cos(($1)${degMultiplier})`);
-      expr = expr.replace(/tan\(([^)]+)\)/g, `Math.tan(($1)${degMultiplier})`);
-      expr = expr.replace(/sqrt\(([^)]+)\)/g, `Math.sqrt($1)`);
-      expr = expr.replace(/log\(([^)]+)\)/g, `Math.log10($1)`);
-      expr = expr.replace(/ln\(([^)]+)\)/g, `Math.log($1)`);
-
-      // Safe character test: only numbers, operators, Math functions, parens
-      if (!/^[\d+\-*/()., MathPIEsincoztaqrgl**\s]+$/.test(expr)) {
-        throw new Error('Invalid Expression');
-      }
-
-      const result = Function(`'use strict'; return (${expr})`)();
-      const formattedResult =
-        typeof result === 'number' && !isNaN(result)
-          ? parseFloat(result.toFixed(8)).toString()
-          : 'Error';
+      const formattedResult = formatResult(evaluateExpression(expression, { degrees: isDegree }));
+      if (formattedResult === 'Error') throw new Error('Not a finite number');
 
       setHistory((prev) => [`${expression} = ${formattedResult}`, ...prev.slice(0, 5)]);
       setDisplay(formattedResult);
       setExpression(formattedResult);
     } catch {
       setDisplay('Error');
+      setExpression('');
     }
   };
 
@@ -131,7 +106,7 @@ export function ScientificCalculator() {
           </div>
           <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1 border-t border-slate-800">
             <span className="text-slate-400 font-semibold">{isDegree ? 'DEG' : 'RAD'} MODE</span>
-            <span>MNNIT Engineering Calculator</span>
+            <span>Scientific calculator</span>
           </div>
         </div>
 

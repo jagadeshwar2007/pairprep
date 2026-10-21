@@ -2,10 +2,11 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { ACADEMIC_YEARS, BRANCHES, SUBJECTS } from '@/data/academicData';
 import { DEMO_RESOURCES } from '@/data/resourcesData';
-import { Breadcrumbs } from '@/components/academic/Breadcrumbs';
 import { SubjectResourceView } from '@/components/resources/SubjectResourceView';
 import { Badge } from '@/components/ui/Badge';
-import { Award } from 'lucide-react';
+import { Notice } from '@/components/ui/Feedback';
+import { Page, PageHeader } from '@/components/ui/Layout';
+import { ExternalLink } from 'lucide-react';
 
 interface SubjectDetailsPageProps {
   params: Promise<{
@@ -30,12 +31,14 @@ export async function generateMetadata({ params }: SubjectDetailsPageProps) {
   const subject = SUBJECTS.find((s) => s.id === subjectId);
 
   if (!subject) {
-    return { title: 'Subject Not Found | Pairprep' };
+    return { title: 'Subject not found' };
   }
 
+  const code = subject.courseCode || subject.code;
+  const title = subject.title || subject.name;
   return {
-    title: `${subject.code} - ${subject.name} Notes & PYQs | Pairprep MNNIT`,
-    description: `Download lecture notes, midsem & endsem question papers, and syllabus for ${subject.name} (${subject.code}) at MNNIT Allahabad.`,
+    title: code ? `${title} (${code})` : title,
+    description: `Resources and course details for ${title}${code ? ` (${code})` : ''} at MNNIT Allahabad.`,
   };
 }
 
@@ -51,77 +54,77 @@ export default async function SubjectDetailsPage({ params }: SubjectDetailsPageP
     notFound();
   }
 
-  // Get resources for this subject
+  const displayCode = subject.courseCode || subject.code;
+  const displayTitle = subject.title || subject.name;
+  const ltp = subject.ltp || (subject.L && subject.T && subject.P ? `${subject.L}-${subject.T}-${subject.P}` : null);
+
   const subjectResources = DEMO_RESOURCES.filter((r) => r.subjectId === subject.id);
 
+  const facts: Array<[string, string]> = [
+    ['Credits', String(subject.credits)],
+    ['Type', subject.type ? subject.type.charAt(0).toUpperCase() + subject.type.slice(1) : 'Core'],
+  ];
+  if (ltp) facts.push(['L-T-P', ltp]);
+  if (subject.effectiveFrom) facts.push(['Curriculum from', subject.effectiveFrom]);
+
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <Breadcrumbs
-        items={[
-          { label: 'Resources', href: '/resources' },
+    <Page>
+      <PageHeader
+        eyebrow={`${branchData.code} · Semester ${semNumber}`}
+        title={displayTitle}
+        breadcrumbs={[
+          { label: 'Library', href: '/resources' },
           { label: yearData.title, href: `/resources/${yearData.id}` },
           { label: branchData.code, href: `/resources/${yearData.id}/${branchData.id}` },
-          {
-            label: `Semester ${semNumber}`,
-            href: `/resources/${yearData.id}/${branchData.id}/${semNumber}`,
-          },
-          { label: subject.code },
+          { label: `Semester ${semNumber}`, href: `/resources/${yearData.id}/${branchData.id}/${semNumber}` },
+          { label: displayCode || displayTitle },
         ]}
+        meta={
+          <>
+            {displayCode ? (
+              <Badge variant="neutral" className="font-mono">
+                {displayCode}
+              </Badge>
+            ) : (
+              <Badge variant="warning">Course code not listed</Badge>
+            )}
+            <Badge variant="outline">{branchData.name}</Badge>
+          </>
+        }
       />
 
-      {/* Subject Header Card */}
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/60">
-              {subject.code}
-            </span>
-            <Badge variant="outline">{branchData.code}</Badge>
-            <Badge variant="neutral">Semester {semNumber}</Badge>
-            <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1 rounded-lg border border-amber-200/50">
-              <Award className="h-3.5 w-3.5" />
-              <span>{subject.credits} Credits</span>
+      <section aria-label="Course details" className="space-y-3">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-4">
+          {facts.map(([k, v]) => (
+            <div key={k} className="bg-white px-4 py-3">
+              <dt className="text-xs text-slate-500">{k}</dt>
+              <dd className="mt-0.5 text-sm font-semibold text-slate-900">{v}</dd>
             </div>
-          </div>
-
-          <span className="text-xs font-medium text-slate-500">
-            {subjectResources.length} Materials catalogued
-          </span>
-        </div>
-
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            {subject.name}
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
-            {subject.description}
-          </p>
-        </div>
-
-        {/* Topics covered */}
-        <div className="pt-2 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Syllabus Topics:
-          </span>
-          {subject.topics.map((t, idx) => (
-            <span
-              key={idx}
-              className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium"
-            >
-              {t}
-            </span>
           ))}
-        </div>
+        </dl>
 
-        {subject.instructorNote && (
-          <div className="mt-3 text-xs bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 p-3 rounded-xl text-slate-600 dark:text-slate-400">
-            <strong>Curator Note:</strong> {subject.instructorNote}
-          </div>
+        {subject.sourceUrl && (
+          <a
+            href={subject.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 hover:underline"
+          >
+            Curriculum source document <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
         )}
-      </div>
 
-      {/* Interactive Category Filter and Resources Grid */}
+        {subject.isQuestionableCode && (
+          <Notice tone="warning" title="Course code needs checking">
+            The code <code className="rounded bg-amber-100 px-1 font-mono">{displayCode}</code> is recorded as printed in
+            the source{subject.note ? ` (${subject.note})` : ''} and may contain a typo. Confirm it with your department.
+          </Notice>
+        )}
+
+        {subject.note && !subject.isQuestionableCode && <Notice>Source note: {subject.note}</Notice>}
+      </section>
+
       <SubjectResourceView subject={subject} resources={subjectResources} />
-    </div>
+    </Page>
   );
 }

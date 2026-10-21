@@ -1,120 +1,89 @@
 'use client';
 
 import React from 'react';
+import { Link2, Flag } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Notice } from '@/components/ui/Feedback';
+import { useToast } from '@/components/ui/Toast';
 import { ResourceItem } from '@/types';
 import { CATEGORY_LABELS } from '@/data/resourcesData';
-import {
-  Download,
-  FileText,
-  CheckCircle2,
-  Calendar,
-  User,
-  HardDrive,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+import { DemoBadge } from './DemoBadge';
+import { ResourceViewer } from './ResourceViewer';
 
 interface ResourcePreviewModalProps {
   resource: ResourceItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onDownload: (res: ResourceItem) => void;
+  onReport?: () => void;
 }
 
-export function ResourcePreviewModal({
-  resource,
-  isOpen,
-  onClose,
-  onDownload,
-}: ResourcePreviewModalProps) {
+export function ResourcePreviewModal({ resource, isOpen, onClose, onReport }: ResourcePreviewModalProps) {
+  const { notify } = useToast();
   if (!resource) return null;
 
-  const categoryInfo = CATEGORY_LABELS[resource.category];
+  const category = CATEGORY_LABELS[resource.category]?.label ?? resource.category;
+  const subjectPath = `/resources/${resource.yearId}/${resource.branchId}/${resource.semester}/${resource.subjectId}`;
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${subjectPath}`);
+      notify('Link to this subject copied');
+    } catch {
+      notify('Could not copy the link in this browser', 'error');
+    }
+  };
+
+  const details: Array<[string, string]> = [
+    ['Subject', `${resource.subjectName} (${resource.subjectCode || 'code not listed'})`],
+    ['Branch', `${resource.branchCode}, semester ${resource.semester}`],
+    ['Type', category],
+    ['Format', resource.fileType.toUpperCase()],
+    ['Contributor', resource.author],
+    ['Added', resource.uploadedAt],
+  ];
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={resource.title}
-      description={`${resource.subjectCode} • ${resource.subjectName}`}
-      maxWidth="2xl"
-    >
-      <div className="space-y-5">
-        {/* Meta badges */}
+    <Modal isOpen={isOpen} onClose={onClose} title={resource.title} maxWidth="4xl">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="primary">{categoryInfo?.label || resource.category}</Badge>
+          {resource.isDemo && <DemoBadge />}
+          <Badge variant="primary">{category}</Badge>
           <Badge variant="outline">{resource.fileType.toUpperCase()}</Badge>
-          {resource.fileSize && <Badge variant="neutral">{resource.fileSize}</Badge>}
-          {resource.verified && (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200/50">
-              <CheckCircle2 className="h-3 w-3" /> Peer Verified
-            </span>
+        </div>
+
+        {resource.isDemo && (
+          <Notice tone="demo" title="Demonstration resource">
+            This entry is a placeholder used to show how the library will look. The PDF below is a generic sample page,
+            not an exam paper or notes, and nobody has reviewed or verified this entry.
+          </Notice>
+        )}
+
+        <ResourceViewer resource={resource} />
+
+        {resource.description && <p className="text-sm leading-relaxed text-slate-600">{resource.description}</p>}
+
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm sm:grid-cols-2">
+          {details.map(([k, v]) => (
+            <div key={k} className="flex gap-2">
+              <dt className="w-24 shrink-0 text-slate-500">{k}</dt>
+              <dd className="min-w-0 break-words font-medium text-slate-800">{v}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          {onReport && (
+            <Button variant="ghost" onClick={onReport}>
+              <Flag className="h-4 w-4" /> Report a problem
+            </Button>
           )}
-        </div>
-
-        {/* Mock Document Viewer Panel */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-6 text-center space-y-4">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-indigo-600 shadow-sm">
-            <FileText className="h-8 w-8" />
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-slate-800 dark:text-slate-200">
-              Interactive PDF Document Preview
-            </h4>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-              {resource.description ||
-                'High-resolution PDF scan optimized for mobile and desktop reading. Verified for MNNIT academic standards.'}
-            </p>
-          </div>
-
-          {/* Document metadata table */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-left pt-2">
-            <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60">
-              <span className="text-[10px] text-slate-400 uppercase font-semibold block flex items-center gap-1">
-                <User className="h-2.5 w-2.5" /> Contributor
-              </span>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate block">
-                {resource.author}
-              </span>
-            </div>
-            <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60">
-              <span className="text-[10px] text-slate-400 uppercase font-semibold block flex items-center gap-1">
-                <Calendar className="h-2.5 w-2.5" /> Uploaded
-              </span>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate block">
-                {resource.uploadedAt}
-              </span>
-            </div>
-            <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60 col-span-2 sm:col-span-1">
-              <span className="text-[10px] text-slate-400 uppercase font-semibold block flex items-center gap-1">
-                <HardDrive className="h-2.5 w-2.5" /> Size / Format
-              </span>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate block">
-                {resource.fileSize || 'Standard'} • {resource.fileType.toUpperCase()}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Notice */}
-        <div className="text-[11px] text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-2.5 rounded-lg">
-          Note: In production with Firebase Storage connected, this viewer embeds PDF.js with page navigation, bookmarking, and search.
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
-          <Button
-            variant="primary"
-            className="flex-1"
-            onClick={() => onDownload(resource)}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download Resource ({resource.fileSize || 'PDF'})
+          <Button variant="outline" onClick={copyLink}>
+            <Link2 className="h-4 w-4" /> Copy subject link
           </Button>
-          <Button variant="outline" onClick={onClose}>
-            Close Preview
+          <Button variant="primary" onClick={onClose}>
+            Close
           </Button>
         </div>
       </div>

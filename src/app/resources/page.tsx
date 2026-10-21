@@ -1,74 +1,52 @@
-import React from 'react';
-import { ACADEMIC_YEARS, BRANCHES } from '@/data/academicData';
-import { YearCard } from '@/components/academic/YearCard';
-import { BranchCard } from '@/components/academic/BranchCard';
-import { Breadcrumbs } from '@/components/academic/Breadcrumbs';
-import { Badge } from '@/components/ui/Badge';
-import { BookOpen } from 'lucide-react';
+import React, { Suspense } from 'react';
+import { ACADEMIC_YEARS } from '@/data/academicData';
+import Link from 'next/link';
+import { ResourceLibrary } from '@/components/resources/ResourceLibrary';
+import { Page, PageHeader } from '@/components/ui/Layout';
+import { CardGridSkeleton, Skeleton } from '@/components/ui/Feedback';
 
 export const metadata = {
-  title: 'Academic Resources Hierarchy | Pairprep MNNIT',
+  title: 'Library',
   description:
-    'Explore engineering study resources by Academic Year, Branch, Semester, and Subject for MNNIT Allahabad.',
+    'Search and browse study resources and subjects by branch, year, semester and resource type for MNNIT Allahabad B.Tech.',
 };
 
-export default function ResourcesIndexPage() {
+function LibraryFallback() {
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-      <Breadcrumbs items={[{ label: 'Resources' }]} />
-
-      {/* Header */}
-      <div className="space-y-3">
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200/50">
-          <BookOpen className="h-3.5 w-3.5" />
-          MNNIT Academic Repository
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Academic Resource Hierarchy
-        </h1>
-        <p className="text-base text-slate-500 max-w-2xl">
-          Structured path: Academic Year → Branch → Semester → Subject → Course Materials. Select your current academic year to start.
-        </p>
+    <div className="space-y-6" role="status" aria-label="Loading the library">
+      <Skeleton className="h-12 w-full" />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-10" />
+        ))}
       </div>
-
-      {/* Step 1: Academic Years */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            1. Select Academic Year
-          </h2>
-          <span className="text-xs text-slate-400">4 Stages of B.Tech</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {ACADEMIC_YEARS.map((year) => (
-            <YearCard key={year.id} year={year} />
-          ))}
-        </div>
-      </div>
-
-      {/* Quick Branch Access */}
-      <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              Quick Branch Directory
-            </h2>
-            <p className="text-xs text-slate-500">
-              Jump straight into any department&apos;s curriculum and subject archives.
-            </p>
-          </div>
-          <Badge variant="warning" size="sm">
-            Sample Directory (Registry verification in progress)
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {BRANCHES.map((b) => (
-            <BranchCard key={b.id} branch={b} yearId="second-year" />
-          ))}
-        </div>
-      </div>
+      <CardGridSkeleton count={6} />
     </div>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    <Page>
+      <PageHeader
+        eyebrow="Library"
+        title="Find what you need to study"
+        description="Search across all 446 subjects and the resource library, or narrow by branch, year, semester and type."
+        breadcrumbs={[{ label: 'Library' }]}
+      />
+
+      <nav aria-label="Browse by year" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <span className="text-slate-500">Browse by year:</span>
+        {ACADEMIC_YEARS.map((year) => (
+          <Link key={year.id} href={`/resources/${year.id}`} className="font-medium text-indigo-700 hover:underline">
+            {year.title}
+          </Link>
+        ))}
+      </nav>
+
+      <Suspense fallback={<LibraryFallback />}>
+        <ResourceLibrary />
+      </Suspense>
+    </Page>
   );
 }

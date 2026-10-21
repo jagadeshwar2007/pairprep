@@ -33,6 +33,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to view th
 
 ---
 
+## Design system
+
+Light theme only. Tokens live in `src/app/globals.css`: the Tailwind `indigo` scale is redefined as the muted ink-blue accent, headlines use a serif display face (`font-display`), and `dark:` utilities are inert (they apply only under a `.dark` class that nothing sets).
+
+Shared components are in `src/components/ui/`: `Button` (+ `buttonClass` for link buttons), `Input`, `Select`, `Card`, `Badge`, `Modal` (focus trap, Escape, labelled), `Toast` (`useToast`), `Feedback` (`Notice`, `EmptyState`, `Skeleton`), `Controls` (`SearchField`, `FilterChip`, `Field`), `Table` and `Layout` (`Page`, `PageHeader`, `Section`). Demo content is always marked with `DemoBadge`.
+
 ## 📦 Project Structure
 
 ```text
@@ -46,7 +52,7 @@ src/
 │   └── admin/            # Administrative review and moderation
 ├── components/           # Reusable UI, layout, academic, and calendar components
 ├── data/                 # Data catalogs (Academic curricula, resources, official calendar)
-├── lib/                  # Utility helpers and calendar-attendance bridge
+├── lib/                  # Pure logic (tested): library search/filter, data validation, expression parser, GPA/attendance math, timer
 └── types/                # Strongly-typed TypeScript domain definitions
 ```
 
@@ -55,9 +61,17 @@ src/
 ## 📜 Build & Verification
 
 ```bash
+# Type check
+npx tsc --noEmit
+
 # Run lint check
 npm run lint
+
+# Run unit tests (data model, calculators, timer, calendar)
+npm test
 
 # Build production bundle
 npm run build
 ```
+
+See [docs/DATA_QUALITY.md](docs/DATA_QUALITY.md) for known gaps in the dataset and demo data, and [docs/PHASE3_READINESS.md](docs/PHASE3_READINESS.md) for where the backend plugs in.

@@ -1,71 +1,75 @@
 import React from 'react';
 import Link from 'next/link';
 import { Subject } from '@/types';
-import { Card } from '@/components/ui/Card';
-import { ArrowRight, Award } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 interface SubjectCardProps {
   subject: Subject;
+  /** Resources attached to this subject (all kinds). */
   resourceCount?: number;
+  /** How many of those are demo placeholders. */
+  demoCount?: number;
 }
 
-export function SubjectCard({ subject, resourceCount = 0 }: SubjectCardProps) {
+export function SubjectCard({ subject, resourceCount = 0, demoCount = 0 }: SubjectCardProps) {
+  const displayCode = subject.courseCode || subject.code;
+  const courseType = subject.type ?? 'core';
+  const ltp = subject.ltp || (subject.L && subject.T && subject.P ? `${subject.L}-${subject.T}-${subject.P}` : null);
+  const realCount = resourceCount - demoCount;
+
+  let resourceLabel = 'No resources yet';
+  let resourceTone = 'text-slate-400';
+  if (realCount > 0) {
+    resourceLabel = `${realCount} ${realCount === 1 ? 'resource' : 'resources'}`;
+    resourceTone = 'text-emerald-700';
+  } else if (demoCount > 0) {
+    resourceLabel = `${demoCount} demo ${demoCount === 1 ? 'placeholder' : 'placeholders'}`;
+    resourceTone = 'text-amber-800';
+  }
+
   return (
     <Link
       href={`/resources/${subject.yearId}/${subject.branchId}/${subject.semester}/${subject.id}`}
-      className="group block focus:outline-none"
+      className="group block h-full rounded-xl focus-visible:outline-offset-2"
     >
-      <Card
-        hoverEffect
-        className="h-full flex flex-col justify-between border-slate-200/90 dark:border-slate-800 transition-all duration-200 group-hover:border-indigo-400 group-hover:shadow-md"
-      >
-        <div>
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/60">
-              {subject.code}
-            </span>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-              <Award className="h-3.5 w-3.5 text-amber-500" />
-              <span>{subject.credits} Credits</span>
-            </div>
-          </div>
-
-          <h4 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-            {subject.name}
-          </h4>
-
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-            {subject.description}
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {subject.topics.slice(0, 3).map((topic, idx) => (
-              <span
-                key={idx}
-                className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-              >
-                {topic}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold">
-          <span className="text-slate-500">
-            {resourceCount > 0 ? (
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                {resourceCount} Resources available
+      <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(20,23,31,0.04)] transition-colors group-hover:border-indigo-300">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="flex min-w-0 items-center gap-1.5">
+            {displayCode ? (
+              <span className="truncate rounded bg-slate-100 px-1.5 py-0.5 font-mono font-medium text-slate-700">
+                {displayCode}
               </span>
             ) : (
-              'Curated study sets'
+              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">Code not listed</span>
+            )}
+            {subject.isQuestionableCode && (
+              <span
+                className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                title="The source prints this code in a way that may contain a typo."
+              >
+                Code unverified
+              </span>
             )}
           </span>
-          <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-            View Material
-            <ArrowRight className="h-3.5 w-3.5" />
+          <span className="shrink-0 text-slate-500">
+            Sem {subject.semester} · {subject.credits} cr
           </span>
         </div>
-      </Card>
+
+        <h3 className="mt-3 text-[15px] font-semibold leading-snug text-slate-900 line-clamp-2 group-hover:text-indigo-800">
+          {subject.title || subject.name}
+        </h3>
+
+        <p className="mt-1.5 text-xs capitalize text-slate-500">
+          {courseType}
+          {ltp ? ` · L-T-P ${ltp}` : ''}
+        </p>
+
+        <div className="mt-auto flex items-center justify-between pt-4 text-xs">
+          <span className={`font-medium ${resourceTone}`}>{resourceLabel}</span>
+          <ArrowUpRight className="h-4 w-4 text-slate-300 transition-colors group-hover:text-indigo-600" aria-hidden="true" />
+        </div>
+      </article>
     </Link>
   );
 }

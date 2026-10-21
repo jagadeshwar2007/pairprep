@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DEMO_PRACTICE_QUESTIONS } from '@/data/practiceQuestionsData';
+import { DEMO_PRACTICE_QUESTIONS, PRACTICE_SUBJECTS } from '@/data/practiceQuestionsData';
 import { QuestionCard } from './QuestionCard';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Notice } from '@/components/ui/Feedback';
 import {
   RotateCcw,
   Trophy,
   Filter,
-  Info,
 } from 'lucide-react';
 
 export function QuizSession() {
@@ -44,13 +44,9 @@ export function QuizSession() {
 
   return (
     <div className="space-y-6">
-      {/* Demonstration Banner */}
-      <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/40 p-4 text-xs text-amber-900 dark:text-amber-200 flex gap-3">
-        <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold">Demonstration Question Bank:</span> These practice questions represent standard undergraduate engineering concepts curated to test algorithmic, systems, and mathematical aptitude. They are sample exercises and not official leaked MNNIT examination questions.
-        </div>
-      </div>
+      <Notice tone="demo" title="Sample questions">
+        A small set of generic practice questions, not past exam papers and not reviewed by faculty.
+      </Notice>
 
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -73,45 +69,22 @@ export function QuizSession() {
             >
               All Topics ({DEMO_PRACTICE_QUESTIONS.length})
             </button>
-            <button
-              onClick={() => {
-                setSelectedSubject('cs-13101');
-                handleRestart();
-              }}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                selectedSubject === 'cs-13101'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-              }`}
-            >
-              Data Structures
-            </button>
-            <button
-              onClick={() => {
-                setSelectedSubject('cs-15101');
-                handleRestart();
-              }}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                selectedSubject === 'cs-15101'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-              }`}
-            >
-              Operating Systems
-            </button>
-            <button
-              onClick={() => {
-                setSelectedSubject('ma-11101');
-                handleRestart();
-              }}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                selectedSubject === 'ma-11101'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-              }`}
-            >
-              Mathematics I
-            </button>
+            {PRACTICE_SUBJECTS.map((subj) => (
+              <button
+                key={subj.subjectId}
+                onClick={() => {
+                  setSelectedSubject(subj.subjectId);
+                  handleRestart();
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  selectedSubject === subj.subjectId
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                }`}
+              >
+                {subj.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -140,7 +113,7 @@ export function QuizSession() {
           </h3>
 
           <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-            You reviewed all {filteredQuestions.length} practice questions in this set. Regular revision builds exam confidence for MNNIT Midsems and Endsems.
+            You reviewed all {filteredQuestions.length} practice questions in this set. Come back to the explanations you got wrong.
           </p>
 
           <div className="pt-4 flex justify-center gap-3">

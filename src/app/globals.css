@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * PairPrep design tokens.
+ * The app uses Tailwind's `indigo` scale as its accent everywhere, so the scale is
+ * redefined here as a muted ink-blue instead of editing every component.
+ * Light theme only: `dark:` utilities apply only under an explicit `.dark` class,
+ * which nothing sets, so the OS dark-mode preference no longer changes the site.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  /* Accent: ink blue (restrained, academic) */
+  --color-indigo-50: #f4f6fb;
+  --color-indigo-100: #e7ebf6;
+  --color-indigo-200: #ced6ec;
+  --color-indigo-300: #a9b6dd;
+  --color-indigo-400: #7e8fc8;
+  --color-indigo-500: #5a6cb2;
+  --color-indigo-600: #43529a;
+  --color-indigo-700: #364380;
+  --color-indigo-800: #2d3769;
+  --color-indigo-900: #272f56;
+  --color-indigo-950: #171c36;
+
+  /* Surfaces */
+  --color-paper: #fbfaf8;
+  --color-ink: #14171f;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Visible keyboard focus everywhere, without affecting mouse users */
+:focus-visible {
+  outline: 2px solid var(--color-indigo-500);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-indigo-200);
+  color: var(--color-indigo-950);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

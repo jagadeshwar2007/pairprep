@@ -4,25 +4,16 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import { Notice } from '@/components/ui/Feedback';
 import { CourseGradeEntry } from '@/types';
+import { GRADE_POINTS, computeSgpa } from '@/lib/academicMath';
 import {
   Plus,
   Trash2,
-  Info,
   RotateCcw,
   BookOpen,
   Award,
 } from 'lucide-react';
-
-const GRADE_POINTS: Record<string, number> = {
-  'A+': 10,
-  A: 9,
-  'B+': 8,
-  B: 7,
-  C: 6,
-  D: 4,
-  F: 0,
-};
 
 const DEFAULT_COURSES: CourseGradeEntry[] = [
   { id: '1', name: 'Data Structures and Algorithms', credits: 4, grade: 'A+' },
@@ -72,22 +63,13 @@ export function GpaCalculator() {
   };
 
   // SGPA Calculation
-  const totalCredits = courses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
-  const totalPoints = courses.reduce(
-    (sum, c) => sum + (Number(c.credits) || 0) * (GRADE_POINTS[c.grade] ?? 0),
-    0
-  );
-  const sgpa = totalCredits > 0 ? totalPoints / totalCredits : 0;
+  const { totalCredits, totalPoints, sgpa } = computeSgpa(courses);
 
   return (
     <div className="space-y-6">
-      {/* Assumptions Banner */}
-      <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/40 p-4 text-xs text-indigo-900 dark:text-indigo-200 flex gap-3">
-        <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold">MNNIT Grading Scale Assumption:</span> Calculations follow the standard 10-point relative grading scale used across engineering departments at MNNIT Allahabad: A+ (10), A (9), B+ (8), B (7), C (6), D (4), and F (0). Formula: SGPA = Σ (Course Credits × Grade Points) / Σ Credits.
-        </div>
-      </div>
+      <Notice title="Assumed grading scale">
+        <span>Grade points are A+ 10, A 9, B+ 8, B 7, C 6, D 4, F 0. This scale has not been verified against the official ordinance, so treat the result as an estimate. SGPA = sum of (credits x grade points) / sum of credits.</span>
+      </Notice>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Course Rows Table */}
@@ -185,7 +167,7 @@ export function GpaCalculator() {
 
         {/* Results & Grade Legend */}
         <div className="space-y-4">
-          <Card className="text-center p-6 bg-gradient-to-br from-indigo-50/50 via-white to-white dark:from-indigo-950/20 dark:via-slate-900 dark:to-slate-900 border-indigo-200/60 dark:border-indigo-900/60">
+          <Card className="bg-white text-center p-6 border-indigo-200/60 dark:border-indigo-900/60">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               Projected Semester SGPA
             </span>
@@ -221,7 +203,7 @@ export function GpaCalculator() {
           <Card className="p-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
               <Award className="h-3.5 w-3.5 text-amber-500" />
-              MNNIT 10-Point Scale
+              Assumed 10-point scale
             </h4>
             <div className="grid grid-cols-2 gap-1.5 text-xs">
               {Object.entries(GRADE_POINTS).map(([letter, pts]) => (

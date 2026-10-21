@@ -1,10 +1,27 @@
 import { PracticeQuestion } from '@/types';
+import { SUBJECTS } from '@/data/academicData';
 
-export const DEMO_PRACTICE_QUESTIONS: PracticeQuestion[] = [
+/** Subjects that have practice questions (ids come from the subject dataset). */
+export const PRACTICE_SUBJECTS = [
+  { subjectId: 'cse-sem2-ord4-csn12401', label: 'Data Structures' },
+  { subjectId: 'cse-sem4-ord2-csn14401', label: 'Operating Systems' },
+  { subjectId: 'cse-sem1-ord2-man11101', label: 'Mathematics I' },
+] as const;
+
+type PracticeQuestionSeed = Omit<PracticeQuestion, 'subjectName'>;
+
+function hydrateQuestion(seed: PracticeQuestionSeed): PracticeQuestion {
+  const subject = SUBJECTS.find((s) => s.id === seed.subjectId);
+  if (!subject) {
+    throw new Error(`Practice question "${seed.id}" references unknown subjectId "${seed.subjectId}"`);
+  }
+  return { ...seed, subjectName: subject.title ?? subject.name };
+}
+
+const PRACTICE_QUESTION_SEEDS: PracticeQuestionSeed[] = [
   {
     id: 'pq-ds-01',
-    subjectId: 'cs-13101',
-    subjectName: 'Data Structures and Algorithms',
+    subjectId: 'cse-sem2-ord4-csn12401',
     topic: 'Binary Search Trees & Balancing',
     difficulty: 'Medium',
     question: 'What is the worst-case time complexity of searching an element in an un-balanced Binary Search Tree (BST) with n nodes versus an AVL Tree?',
@@ -21,8 +38,7 @@ export const DEMO_PRACTICE_QUESTIONS: PracticeQuestion[] = [
   },
   {
     id: 'pq-ds-02',
-    subjectId: 'cs-13101',
-    subjectName: 'Data Structures and Algorithms',
+    subjectId: 'cse-sem2-ord4-csn12401',
     topic: 'Graph Algorithms',
     difficulty: 'Hard',
     question: 'Consider a directed graph with negative edge weights but no negative cycles. Which algorithm is guaranteed to find single-source shortest paths correctly?',
@@ -39,8 +55,7 @@ export const DEMO_PRACTICE_QUESTIONS: PracticeQuestion[] = [
   },
   {
     id: 'pq-ds-03',
-    subjectId: 'cs-13101',
-    subjectName: 'Data Structures and Algorithms',
+    subjectId: 'cse-sem2-ord4-csn12401',
     topic: 'Sorting & Heaps',
     difficulty: 'Easy',
     question: 'What is the time complexity to build a binary max-heap from an unordered array of n elements using the bottom-up Heapify approach?',
@@ -57,8 +72,7 @@ export const DEMO_PRACTICE_QUESTIONS: PracticeQuestion[] = [
   },
   {
     id: 'pq-os-01',
-    subjectId: 'cs-15101',
-    subjectName: 'Operating Systems',
+    subjectId: 'cse-sem4-ord2-csn14401',
     topic: 'Deadlocks & Resource Allocation',
     difficulty: 'Medium',
     question: 'Which of the following is NOT one of the four Coffman conditions necessary for a deadlock to occur?',
@@ -75,8 +89,7 @@ export const DEMO_PRACTICE_QUESTIONS: PracticeQuestion[] = [
   },
   {
     id: 'pq-math-01',
-    subjectId: 'ma-11101',
-    subjectName: 'Engineering Mathematics I',
+    subjectId: 'cse-sem1-ord2-man11101',
     topic: 'Linear Algebra & Matrices',
     difficulty: 'Easy',
     question: 'If A is a 3×3 real symmetric matrix with eigenvalues 2, 3, and 5, what is the determinant of matrix A?',
@@ -92,3 +105,5 @@ export const DEMO_PRACTICE_QUESTIONS: PracticeQuestion[] = [
     yearReference: 'Sample Calculus & Algebra Practice',
   },
 ];
+
+export const DEMO_PRACTICE_QUESTIONS: PracticeQuestion[] = PRACTICE_QUESTION_SEEDS.map(hydrateQuestion);

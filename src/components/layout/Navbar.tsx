@@ -1,177 +1,149 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  BookOpen,
-  Search,
-  Sparkles,
-  Menu,
-  X,
-  GraduationCap,
-  Calculator,
-  Compass,
-  FileCheck2,
-  Calendar,
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Search, Menu, X, GraduationCap } from 'lucide-react';
+import { Button, buttonClass } from '@/components/ui/Button';
 import { SearchModal } from './SearchModal';
 import { AuthModal } from './AuthModal';
 import { cn } from '@/lib/utils';
 
+export const NAV_LINKS = [
+  { href: '/resources', label: 'Library' },
+  { href: '/tools', label: 'Study tools' },
+  { href: '/calendar', label: 'Calendar' },
+  { href: '/practice', label: 'Practice' },
+  { href: '/submit', label: 'Contribute' },
+];
+
+export function Brand({ className }: { className?: string }) {
+  return (
+    <Link href="/" className={cn('flex min-h-10 items-center gap-2.5', className)} aria-label="PairPrep home">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-700 text-white">
+        <GraduationCap className="h-[18px] w-[18px]" />
+      </span>
+      <span className="font-display text-xl font-semibold tracking-tight text-slate-900">PairPrep</span>
+    </Link>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
 
-  const navLinks = [
-    { href: '/', label: 'Home', icon: Compass },
-    { href: '/resources', label: 'Resources', icon: BookOpen },
-    { href: '/calendar', label: 'Calendar', icon: Calendar },
-    { href: '/practice', label: 'Practice', icon: Sparkles },
-    { href: '/tools', label: 'Academic Tools', icon: Calculator },
-    { href: '/submit', label: 'Contribute', icon: FileCheck2 },
-  ];
+  // The mobile menu is "open" only for the page it was opened on, so navigating closes it.
+  const mobileMenuOpen = menuFor === pathname;
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  };
+  // "/" focuses search, unless the user is typing somewhere.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+      e.preventDefault();
+      setSearchOpen(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/85 dark:border-slate-800/80 dark:bg-slate-900/85 backdrop-blur-md transition-all">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo & Wordmark */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <GraduationCap className="h-5 w-5" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
-                  Pair<span className="text-indigo-600 dark:text-indigo-400">prep</span>
-                </span>
-                <span className="text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200/50">
-                  MNNIT
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 -mt-0.5 font-medium hidden sm:block">
-                Academic Hub
-              </span>
-            </div>
-          </Link>
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Brand />
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
-              const active = isActive(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'px-3.5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5',
-                    active
-                      ? 'bg-indigo-50/80 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/70'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+          <nav className="hidden md:flex items-center gap-1" aria-label="Main">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive(link.href) ? 'page' : undefined}
+                className={cn(
+                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive(link.href)
+                    ? 'bg-indigo-50 text-indigo-800'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className="hidden md:flex items-center gap-2">
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/70 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl transition-all cursor-pointer"
-              aria-label="Open search dialog"
+              className="flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-700 cursor-pointer"
+              aria-label="Search the library"
             >
-              <Search className="h-3.5 w-3.5 text-slate-400" />
-              <span>Search PYQs, notes...</span>
-              <kbd className="hidden lg:inline-block text-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1 rounded shadow-2xs font-mono">
+              <Search className="h-4 w-4" />
+              <span className="hidden lg:inline">Search</span>
+              <kbd className="hidden lg:inline rounded border border-slate-200 bg-slate-50 px-1.5 font-mono text-[10px] text-slate-500">
                 /
               </kbd>
             </button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAuthOpen(true)}
-              className="font-medium"
-            >
-              Sign In
+            <Button variant="outline" size="sm" className="h-9" onClick={() => setAuthOpen(true)}>
+              Sign in
             </Button>
           </div>
 
-          {/* Mobile Actions & Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-1">
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-              aria-label="Search"
+              className="rounded-lg p-2.5 text-slate-600 hover:bg-slate-100 cursor-pointer"
+              aria-label="Search the library"
             >
               <Search className="h-5 w-5" />
             </button>
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-              aria-label="Toggle navigation menu"
+              onClick={() => setMenuFor(mobileMenuOpen ? null : pathname)}
+              className="rounded-lg p-2.5 text-slate-700 hover:bg-slate-100 cursor-pointer"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg px-4 pt-3 pb-6 space-y-2">
-            <div className="space-y-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const active = isActive(link.href);
-                return (
+          <nav id="mobile-nav" aria-label="Mobile" className="md:hidden border-t border-slate-200 bg-white px-4 pb-5 pt-2">
+            <ul className="space-y-0.5">
+              {NAV_LINKS.map((link) => (
+                <li key={link.href}>
                   <Link
-                    key={link.href}
                     href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isActive(link.href) ? 'page' : undefined}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                      active
-                        ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      'flex h-11 items-center rounded-lg px-3 text-[15px] font-medium',
+                      isActive(link.href) ? 'bg-indigo-50 text-indigo-800' : 'text-slate-700 hover:bg-slate-100'
                     )}
                   >
-                    <Icon className="h-4 w-4" />
                     {link.label}
                   </Link>
-                );
-              })}
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <Button
-                variant="primary"
-                size="md"
-                className="w-full justify-center"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setAuthOpen(true);
-                }}
-              >
-                Student Sign-In
-              </Button>
-            </div>
-          </div>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => {
+                setMenuFor(null);
+                setAuthOpen(true);
+              }}
+              className={buttonClass('outline', 'md', 'mt-3 w-full')}
+            >
+              Sign in
+            </button>
+          </nav>
         )}
       </header>
 
-      {/* Global Modals */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>

@@ -22,14 +22,30 @@ export interface Branch {
 }
 
 export interface Subject {
-  id: string; // e.g. 'cs-13101'
-  code: string; // e.g. 'CS13101'
-  name: string; // 'Data Structures and Algorithms'
+  id: string; // e.g. 'cse-sem1-ord1-cyn11502'
+  code: string; // e.g. 'CYN11502'
+  name: string; // e.g. 'Chemistry'
   shortName?: string;
   branchId: string;
+  branch?: string;
+  branchCode?: string;
   semester: number;
+  year?: number;
   yearId: AcademicYearId;
+  order?: number;
+  courseCode?: string;
+  title?: string;
+  L?: string;
+  T?: string;
+  P?: string;
+  ltp?: string;
   credits: number;
+  type?: string;
+  note?: string;
+  effectiveFrom?: string;
+  sourceUrl?: string;
+  hasMissingCode?: boolean;
+  isQuestionableCode?: boolean;
   description: string;
   topics: string[];
   instructorNote?: string;
@@ -64,6 +80,8 @@ export interface ResourceItem {
   uploadedAt: string;
   downloadsCount: number;
   verified: boolean;
+  /** True for placeholder entries with no real file attached. */
+  isDemo?: boolean;
   description?: string;
   tags?: string[];
 }

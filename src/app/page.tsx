@@ -1,417 +1,196 @@
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  BookOpen,
-  Calculator,
-  Calendar,
-  FileCheck2,
-  Layers,
-  Search,
-  Sparkles,
-  Timer,
-  TrendingUp,
-  Award,
-  Laptop,
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { ACADEMIC_YEARS, BRANCHES } from '@/data/academicData';
-import { DEMO_RESOURCES } from '@/data/resourcesData';
-import { YearCard } from '@/components/academic/YearCard';
-import { BranchCard } from '@/components/academic/BranchCard';
+import { ArrowRight, Search } from 'lucide-react';
+import { ACADEMIC_YEARS, BRANCHES, SUBJECTS } from '@/data/academicData';
+import { CATEGORY_LABELS, DEMO_RESOURCES } from '@/data/resourcesData';
+import { getRecentRealResources } from '@/lib/library';
+import { STUDY_TOOLS } from '@/data/studyTools';
 import { ResourceCard } from '@/components/resources/ResourceCard';
-import { SearchModal } from '@/components/layout/SearchModal';
+import { buttonClass } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/Feedback';
+import { Page, Section } from '@/components/ui/Layout';
+import type { ResourceCategory } from '@/types';
+import { FileText } from 'lucide-react';
 
 export default function HomePage() {
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState('all');
-
-  const filteredDemoResources =
-    selectedBranchFilter === 'all'
-      ? DEMO_RESOURCES.slice(0, 6)
-      : DEMO_RESOURCES.filter((r) => r.branchId === selectedBranchFilter).slice(0, 6);
-
-  const academicTools = [
-    {
-      title: 'Attendance Calculator',
-      description:
-        'Track MNNIT 75% attendance rule, calculate permissible bunks, and required recovery classes.',
-      href: '/tools/attendance',
-      icon: TrendingUp,
-      color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60',
-      badge: '75% Rule',
-    },
-    {
-      title: 'Scientific Calculator',
-      description:
-        'Trigonometry, logarithmic, exponential, and power computations tailored for engineering tutorials.',
-      href: '/tools/scientific-calc',
-      icon: Calculator,
-      color: 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200/60',
-      badge: 'Full Suite',
-    },
-    {
-      title: 'Pomodoro Study Timer',
-      description:
-        '25-minute deep focus intervals with automated 5m & 15m rest periods and audible completion chimes.',
-      href: '/tools/study-timer',
-      icon: Timer,
-      color: 'bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 border-purple-200/60',
-      badge: 'Focus 25m',
-    },
-    {
-      title: 'Semester GPA (SGPA)',
-      description:
-        'Official 10-point MNNIT relative grading weights to project your end-semester grade sheet.',
-      href: '/tools/gpa',
-      icon: Award,
-      color: 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60',
-      badge: '10-Point Scale',
-    },
-    {
-      title: 'Cumulative CGPA',
-      description:
-        'Aggregate multi-semester SGPA weighted by departmental credit units (1st to 8th Semester).',
-      href: '/tools/cgpa',
-      icon: Layers,
-      color: 'bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200/60',
-      badge: 'B.Tech Overall',
-    },
-  ];
+  const recent = getRecentRealResources(DEMO_RESOURCES, 4);
+  const categories = Object.keys(CATEGORY_LABELS) as ResourceCategory[];
 
   return (
-    <div className="flex flex-col gap-16 lg:gap-24 pb-20">
-      {/* ===================== HERO SECTION ===================== */}
-      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-slate-200/70 dark:border-slate-800/70 bg-gradient-to-b from-indigo-50/40 via-white to-transparent dark:from-slate-900/50 dark:via-slate-950 dark:to-transparent">
-        {/* Glow backdrop circles */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none -z-10" />
-
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-8">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/80 shadow-xs text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-            <Sparkles className="h-3.5 w-3.5 text-indigo-500 animate-pulse" />
-            <span>Curated for all 4 Years & B.Tech Branches • MNNIT Allahabad</span>
-          </div>
-
-          {/* Main Headline */}
-          <div className="max-w-4xl mx-auto space-y-4">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.12]">
-              Your Branch. Your Semester.{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 dark:from-indigo-400 dark:via-sky-400 dark:to-teal-300">
-                Your Preparation.
-              </span>
+    <>
+      {/* Hero */}
+      <section className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
+              For MNNIT Allahabad B.Tech students
+            </p>
+            <h1 className="font-display mt-4 text-4xl font-semibold leading-[1.1] text-slate-900 text-balance sm:text-5xl lg:text-6xl">
+              Study material, organised the way your degree is.
             </h1>
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              Pairprep centralizes lecture notes, previous-year question papers (PYQs), midsem/endsem exams, lab manuals, and student productivity tools in one unified peer repository.
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              Find notes, papers and course details by branch, semester and subject, and keep your grades and
+              attendance in check with a few simple tools.
             </p>
-          </div>
 
-          {/* Hero Interactive Search Trigger Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div
-              onClick={() => setSearchModalOpen(true)}
-              className="flex items-center justify-between p-2 pl-4 rounded-2xl border-2 border-indigo-100 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-lg shadow-indigo-500/5 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-3 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
-                <Search className="h-5 w-5 text-indigo-500" />
-                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Search subjects, PYQs, branches (e.g. Data Structures, OS, CSE)...
-                </span>
+            <form action="/resources" method="get" role="search" className="mt-8 flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                <input
+                  type="search"
+                  name="q"
+                  autoComplete="off"
+                  placeholder="Search a subject or course code"
+                  aria-label="Search the library"
+                  className="h-12 w-full rounded-lg border border-slate-300 bg-white pl-12 pr-4 text-base text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
               </div>
-              <Button variant="primary" size="sm" className="hidden sm:inline-flex">
-                Quick Search
-              </Button>
-            </div>
-            <div className="flex items-center justify-center gap-4 mt-2.5 text-xs text-slate-400">
-              <span>Popular searches:</span>
-              <button
-                onClick={() => setSearchModalOpen(true)}
-                className="hover:text-indigo-600 dark:hover:text-indigo-400 underline cursor-pointer"
-              >
-                CS13101 Data Structures
+              <button type="submit" className={buttonClass('primary', 'lg')}>
+                Search library
               </button>
-              <span>•</span>
-              <button
-                onClick={() => setSearchModalOpen(true)}
-                className="hover:text-indigo-600 dark:hover:text-indigo-400 underline cursor-pointer"
-              >
-                MA11101 Math I
-              </button>
-              <span>•</span>
-              <button
-                onClick={() => setSearchModalOpen(true)}
-                className="hover:text-indigo-600 dark:hover:text-indigo-400 underline cursor-pointer"
-              >
-                CSE Sem 3
-              </button>
-            </div>
+            </form>
+            <p className="mt-3 text-sm text-slate-500">
+              {SUBJECTS.length} subjects across {BRANCHES.length} branches are catalogued. Resource uploads are not open
+              yet, so the library currently contains demonstration entries only.
+            </p>
           </div>
+        </div>
+      </section>
 
-          {/* Action CTAs */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Link href="/resources">
-              <Button variant="primary" size="lg" className="shadow-md shadow-indigo-600/20">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Explore Resources
-              </Button>
+      <Page className="!pt-10">
+        {/* Departments */}
+        <Section
+          title="Browse by branch"
+          description="Open the library filtered to your department."
+          action={
+            <Link href="/resources" className="hidden text-sm font-medium text-indigo-700 hover:underline sm:inline">
+              All branches
             </Link>
-            <Link href="/calendar">
-              <Button variant="outline" size="lg" className="border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-semibold">
-                <Calendar className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" />
-                Academic Calendar (2026–27)
-              </Button>
-            </Link>
-            <Link href="/tools">
-              <Button variant="outline" size="lg">
-                <Calculator className="h-4 w-4 mr-2" />
-                Academic Tools
-              </Button>
-            </Link>
-          </div>
-
-          {/* Quick Metrics Banner */}
-          <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto border-t border-slate-200/60 dark:border-slate-800/60">
-            <div className="p-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">4 Years</div>
-              <div className="text-xs text-slate-500">B.Tech 1st to 8th Sem</div>
-            </div>
-            <div className="p-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">8 Branches</div>
-              <div className="text-xs text-slate-500">MNNIT Engineering</div>
-            </div>
-            <div className="p-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">8 Categories</div>
-              <div className="text-xs text-slate-500">Notes, PYQs, Labs & More</div>
-            </div>
-            <div className="p-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white">100% Peer</div>
-              <div className="text-xs text-slate-500">Student Curated</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================== ACADEMIC YEAR SELECTION ===================== */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              <Calendar className="h-4 w-4" />
-              <span>Step 1: Choose Academic Stage</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
-              Select Your Academic Year
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Navigate directly to semester syllabi, midsem/endsem papers, and notes for your batch.
-            </p>
-          </div>
-          <Link
-            href="/resources"
-            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 shrink-0"
-          >
-            Browse all years hierarchy <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {ACADEMIC_YEARS.map((year) => (
-            <YearCard key={year.id} year={year} />
-          ))}
-        </div>
-      </section>
-
-      {/* ===================== BRANCH EXPLORATION ===================== */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              <Laptop className="h-4 w-4" />
-              <span>Step 2: Department Repositories</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
-              Explore by Engineering Branch
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Course materials organized by specialized B.Tech engineering departments at MNNIT.
-            </p>
-          </div>
-          <Badge variant="warning" size="sm">
-            Sample Directory (MNNIT registry verification in progress)
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {BRANCHES.map((branch) => (
-            <BranchCard key={branch.id} branch={branch} yearId="second-year" />
-          ))}
-        </div>
-      </section>
-
-      {/* ===================== RECENTLY ADDED RESOURCES ===================== */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              <Sparkles className="h-4 w-4" />
-              <span>Updated Course Sets</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
-              Recently Added Academic Resources
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Sample lecture summaries, midsem papers, and lab manuals submitted for testing.
-            </p>
-          </div>
-
-          {/* Quick branch pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-            <button
-              onClick={() => setSelectedBranchFilter('all')}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                selectedBranchFilter === 'all'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              All ({DEMO_RESOURCES.length})
-            </button>
-            <button
-              onClick={() => setSelectedBranchFilter('cse')}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                selectedBranchFilter === 'cse'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              CSE
-            </button>
-            <button
-              onClick={() => setSelectedBranchFilter('me')}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                selectedBranchFilter === 'me'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Mechanical
-            </button>
-          </div>
-        </div>
-
-        {/* Resource Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredDemoResources.map((res) => (
-            <ResourceCard key={res.id} resource={res} showSubjectBadge />
-          ))}
-        </div>
-      </section>
-
-      {/* ===================== ACADEMIC TOOLS ===================== */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              <Calculator className="h-4 w-4" />
-              <span>Student Productivity</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
-              Essential Academic Tools
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Calculators and focus utilities designed around MNNIT academic regulations.
-            </p>
-          </div>
-          <Link
-            href="/tools"
-            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-          >
-            Launch all tools hub <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {academicTools.map((tool, idx) => {
-            const Icon = tool.icon;
-            return (
-              <Link key={idx} href={tool.href} className="group block focus:outline-none">
-                <div className="h-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm hover:shadow-md transition-all group-hover:border-indigo-400 dark:group-hover:border-indigo-500 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div
-                        className={`h-11 w-11 rounded-xl flex items-center justify-center border ${tool.color} group-hover:scale-105 transition-transform`}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <Badge variant="outline" size="sm">
-                        {tool.badge}
-                      </Badge>
-                    </div>
-
-                    <h4 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                      {tool.title}
-                    </h4>
-
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      {tool.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                    <span>Open Tool</span>
-                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ===================== CONTRIBUTION SECTION ===================== */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 text-white p-8 sm:p-12 lg:p-16 border border-slate-800 shadow-xl">
-          <div className="max-w-2xl space-y-4 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold border border-indigo-400/30">
-              <FileCheck2 className="h-3.5 w-3.5" />
-              <span>Peer-Driven Academic Platform</span>
-            </div>
-
-            <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
-              Have lecture notes or past semester question papers?
-            </h3>
-
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              Every solved tutorial sheet, handwritten class note, and midsem paper you contribute directly assists fellow MNNITians. Share your study resources with peer verification.
-            </p>
-
-            <div className="pt-4 flex flex-wrap items-center gap-3">
-              <Link href="/submit">
-                <Button variant="primary" size="lg" className="bg-indigo-500 hover:bg-indigo-600">
-                  <FileCheck2 className="h-4 w-4 mr-2" />
-                  Submit Academic Resource
-                </Button>
-              </Link>
-              <Link href="/practice">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+          }
+        >
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {BRANCHES.map((b) => (
+              <li key={b.id}>
+                <Link
+                  href={`/resources?branch=${b.id}`}
+                  className="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-indigo-300"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Try Practice Questions
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+                  <span className="w-12 shrink-0 font-mono text-xs font-semibold text-indigo-700">{b.code}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{b.name}</span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-indigo-600" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
 
-      {/* Global Search Modal */}
-      <SearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
-    </div>
+        {/* Semesters */}
+        <Section title="Browse by semester" description="Jump to every subject taught in a semester, across branches.">
+          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => {
+              const year = ACADEMIC_YEARS.find((y) => y.semesters.includes(n));
+              return (
+                <li key={n}>
+                  <Link
+                    href={`/resources?semester=${n}`}
+                    className="block rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-indigo-300"
+                  >
+                    <span className="font-display text-2xl font-semibold text-slate-900">Sem {n}</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">{year?.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
+
+        {/* Categories */}
+        <Section title="Browse by resource type">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {categories.map((c) => (
+              <li key={c}>
+                <Link
+                  href={`/resources?type=${c}`}
+                  className="block h-full rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-indigo-300"
+                >
+                  <span className="text-sm font-semibold text-slate-900">{CATEGORY_LABELS[c].label}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                    {CATEGORY_LABELS[c].description}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        {/* Recently added: only real (non-demo) resources ever appear here */}
+        <Section title="Recently added">
+          {recent.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {recent.map((r) => (
+                <ResourceCard key={r.id} resource={r} showSubject />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="No resources have been published yet"
+              description="Uploads open in a later release. Until then the library holds clearly marked demonstration entries, which are not listed here."
+              action={
+                <>
+                  <Link href="/resources" className={buttonClass('outline')}>
+                    See the demo entries
+                  </Link>
+                  <Link href="/submit" className={buttonClass('subtle')}>
+                    Preview the contribution form
+                  </Link>
+                </>
+              }
+            />
+          )}
+        </Section>
+
+        {/* Tools */}
+        <Section
+          title="Study tools"
+          description="Calculators and planners that work on their own, with no account."
+          action={
+            <Link href="/tools" className="hidden text-sm font-medium text-indigo-700 hover:underline sm:inline">
+              All tools
+            </Link>
+          }
+        >
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {STUDY_TOOLS.map((t) => {
+              const Icon = t.icon;
+              return (
+                <li key={t.href}>
+                  <Link
+                    href={t.href}
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-indigo-300"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                      <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                    </span>
+                    <span className="text-sm font-medium text-slate-800">{t.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
+
+        {/* Call to action */}
+        <section className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center sm:px-10">
+          <h2 className="font-display text-2xl font-semibold text-slate-900 sm:text-3xl">Start with your subjects</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-slate-600">
+            Pick your branch and semester to see exactly what you are studying this term.
+          </p>
+          <Link href="/resources" className={buttonClass('primary', 'lg', 'mt-6')}>
+            Explore the library <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </section>
+      </Page>
+    </>
   );
 }

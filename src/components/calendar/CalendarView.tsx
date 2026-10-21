@@ -107,15 +107,15 @@ export function CalendarView() {
   return (
     <div className="space-y-8">
       {/* Official Footnote / Disclaimer Banner */}
-      <div className="rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 via-white to-indigo-50/40 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20 p-4.5 text-xs text-indigo-950 dark:text-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white rounded-2xl border border-indigo-200/80 dark:border-indigo-900/60 p-4.5 text-xs text-indigo-950 dark:text-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-start gap-3">
           <FileCheck2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <span className="font-bold text-sm block">
-              Official MNNIT Allahabad Academic Calendar (Session 2026–27)
+              Academic calendar, session 2026–27
             </span>
             <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-              Extracted from official two-page institutional circular. Odd Semester: July–December 2026 (77 Instructional Days); Even Semester: January–June 2027 (71 Instructional Days).
+              Transcribed from a two-page institute circular. Odd Semester: July–December 2026 (77 Instructional Days); Even Semester: January–June 2027 (71 Instructional Days).
             </p>
             <p className="text-[10px] text-amber-700 dark:text-amber-300 italic pt-0.5">
               &ldquo;The declared Institute holidays will be considered final in case of any mismatch with the proposed academic calendar.&rdquo;
@@ -327,7 +327,7 @@ export function CalendarView() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -338,7 +338,7 @@ export function CalendarView() {
               </Button>
 
               <select
-                className="h-8 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 text-slate-700 dark:text-slate-200"
+                className="h-8 min-w-0 flex-1 sm:flex-none text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 text-slate-700 dark:text-slate-200"
                 value={activeMonthIdx}
                 onChange={(e) => setActiveMonthIdx(parseInt(e.target.value))}
               >

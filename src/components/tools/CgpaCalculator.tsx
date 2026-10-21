@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Notice } from '@/components/ui/Feedback';
 import { SemesterGpaEntry } from '@/types';
-import { Plus, Trash2, Info, RotateCcw, Award } from 'lucide-react';
+import { computeCgpa } from '@/lib/academicMath';
+import { Plus, Trash2, RotateCcw, Award } from 'lucide-react';
 
 const DEFAULT_SEMESTERS: SemesterGpaEntry[] = [
   { id: '1', semesterNumber: 1, semesterName: 'Semester 1', sgpa: 8.4, credits: 22 },
@@ -55,21 +57,13 @@ export function CgpaCalculator() {
   };
 
   // Cumulative CGPA calculation
-  const totalCredits = semesters.reduce((sum, s) => sum + (Number(s.credits) || 0), 0);
-  const totalQualityPoints = semesters.reduce(
-    (sum, s) => sum + (Number(s.credits) || 0) * (Number(s.sgpa) || 0),
-    0
-  );
-  const cgpa = totalCredits > 0 ? totalQualityPoints / totalCredits : 0;
+  const { totalCredits, cgpa } = computeCgpa(semesters);
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/40 p-4 text-xs text-indigo-900 dark:text-indigo-200 flex gap-3">
-        <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold">Cumulative Formula:</span> CGPA = Σ (Semester SGPA × Semester Credits) / Σ Semester Credits. For MNNIT B.Tech students, typical semester credits range from 20 to 26 credits depending on branch ordinance.
-        </div>
-      </div>
+      <Notice title="How it is calculated">
+        CGPA = sum of (semester SGPA x semester credits) / sum of semester credits. Enter the credits your own grade sheet shows for each semester.
+      </Notice>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Semester rows */}
@@ -95,13 +89,13 @@ export function CgpaCalculator() {
               {semesters.map((sem) => (
                 <div
                   key={sem.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
+                  className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
                 >
                   <div className="w-28 text-xs font-bold text-slate-800 dark:text-slate-200">
                     {sem.semesterName}
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] text-slate-400 font-medium">SGPA:</span>
                       <Input
@@ -137,6 +131,7 @@ export function CgpaCalculator() {
                       disabled={semesters.length <= 1}
                       className="p-1.5 text-slate-400 hover:text-rose-500 disabled:opacity-30 disabled:pointer-events-none rounded transition-colors cursor-pointer"
                       title="Remove semester"
+                      aria-label={`Remove ${sem.semesterName}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -159,7 +154,7 @@ export function CgpaCalculator() {
 
         {/* CGPA Outcome Display */}
         <div className="space-y-4">
-          <Card className="text-center p-6 bg-gradient-to-br from-indigo-50/50 via-white to-white dark:from-indigo-950/20 dark:via-slate-900 dark:to-slate-900 border-indigo-200/60 dark:border-indigo-900/60">
+          <Card className="bg-white text-center p-6 border-indigo-200/60 dark:border-indigo-900/60">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               Cumulative Overall CGPA
             </span>
@@ -191,7 +186,7 @@ export function CgpaCalculator() {
             </div>
 
             <p className="mt-3 text-[11px] text-slate-400 text-left">
-              * Note: Many recruitment companies convert MNNIT CGPA via CGPA × 9.5 or 10.0. Refer to Training & Placement Cell guidelines.
+              * Rough estimate using a x 9.5 factor, which is only a common convention. It is not an official conversion; ask the relevant office or recruiter how they convert.
             </p>
           </Card>
         </div>

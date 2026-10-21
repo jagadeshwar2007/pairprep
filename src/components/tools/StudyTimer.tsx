@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
@@ -11,22 +11,19 @@ import {
   CheckCircle2,
   Volume2,
 } from 'lucide-react';
-
-type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
-
-const MODE_DURATIONS: Record<TimerMode, number> = {
-  focus: 25 * 60, // 25 mins
-  shortBreak: 5 * 60, // 5 mins
-  longBreak: 15 * 60, // 15 mins
-};
+import {
+  INITIAL_TIMER_STATE,
+  MODE_DURATIONS,
+  formatTime,
+  tickTimer,
+  type TimerMode,
+  type TimerState,
+} from '@/lib/timer';
 
 export function StudyTimer() {
-  const [mode, setMode] = useState<TimerMode>('focus');
-  const [timeLeft, setTimeLeft] = useState<number>(MODE_DURATIONS.focus);
+  const [timer, setTimer] = useState<TimerState>(INITIAL_TIMER_STATE);
+  const { mode, timeLeft, completedSessions, rollovers } = timer;
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [completedSessions, setCompletedSessions] = useState<number>(0);
-
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sound chime using Web Audio API
   const playChime = () => {
@@ -54,41 +51,24 @@ export function StudyTimer() {
   };
 
   useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            playChime();
-            if (mode === 'focus') {
-              setCompletedSessions((c) => c + 1);
-              setMode('shortBreak');
-              return MODE_DURATIONS.shortBreak;
-            } else {
-              setMode('focus');
-              return MODE_DURATIONS.focus;
-            }
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    if (!isRunning) return;
+    const id = setInterval(() => setTimer(tickTimer), 1000);
+    return () => clearInterval(id);
+  }, [isRunning]);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isRunning, mode]);
+  // Chime once per completed countdown (kept out of the state updater so it fires exactly once).
+  useEffect(() => {
+    if (rollovers > 0) playChime();
+  }, [rollovers]);
 
   const switchMode = (newMode: TimerMode) => {
     setIsRunning(false);
-    setMode(newMode);
-    setTimeLeft(MODE_DURATIONS[newMode]);
+    setTimer((prev) => ({ ...prev, mode: newMode, timeLeft: MODE_DURATIONS[newMode] }));
   };
 
   const handleReset = () => {
     setIsRunning(false);
-    setTimeLeft(MODE_DURATIONS[mode]);
+    setTimer((prev) => ({ ...prev, timeLeft: MODE_DURATIONS[prev.mode] }));
   };
 
   const handleSkip = () => {
@@ -98,12 +78,6 @@ export function StudyTimer() {
     } else {
       switchMode('focus');
     }
-  };
-
-  const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
-    return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
   const totalDuration = MODE_DURATIONS[mode];

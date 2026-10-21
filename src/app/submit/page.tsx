@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import { Notice } from '@/components/ui/Feedback';
 import { ACADEMIC_YEARS, BRANCHES, SUBJECTS } from '@/data/academicData';
 import { CATEGORY_LABELS } from '@/data/resourcesData';
 import { ResourceCategory } from '@/types';
@@ -15,7 +16,6 @@ import {
   CheckCircle2,
   FileText,
   AlertCircle,
-  Info,
   Link2,
   X,
 } from 'lucide-react';
@@ -25,7 +25,7 @@ export default function SubmitResourcePage() {
   const [academicYear, setAcademicYear] = useState('second-year');
   const [branch, setBranch] = useState('cse');
   const [semester, setSemester] = useState('3');
-  const [subject, setSubject] = useState('cs-13101');
+  const [subject, setSubject] = useState('');
   const [customSubject, setCustomSubject] = useState('');
   const [category, setCategory] = useState<ResourceCategory>('notes');
   const [externalUrl, setExternalUrl] = useState('');
@@ -36,12 +36,12 @@ export default function SubmitResourcePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Available subjects for selected branch and semester
+  // Available subjects for selected branch and semester strictly matching dataset
   const availableSubjects = SUBJECTS.filter(
     (s) =>
       s.semester === parseInt(semester, 10) &&
-      (s.branchId === branch || s.yearId === 'first-year')
-  );
+      s.branchId === branch
+  ).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -106,7 +106,7 @@ export default function SubmitResourcePage() {
       <div className="space-y-3">
         <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200/50">
           <Upload className="h-3.5 w-3.5" />
-          MNNIT Student Contribution Portal
+          Contribute (preview)
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           Submit Academic Resources
@@ -116,26 +116,23 @@ export default function SubmitResourcePage() {
         </p>
       </div>
 
-      {/* Backend Integration Banner */}
-      <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/40 p-4 text-xs text-indigo-900 dark:text-indigo-200 flex gap-3">
-        <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold">Milestone Notice:</span> This frontend submission interface performs client-side validation. Persistent file uploads via Google Cloud Storage and indexing via Firebase Cloud Firestore will be connected in Milestone 2.
-        </div>
-      </div>
+      <Notice tone="warning" title="Submissions are not saved yet">
+        This form checks your input but does not upload or store anything, and there is no review queue behind it.
+        It shows how contributing will work once the backend is connected.
+      </Notice>
 
       {isSubmitted ? (
-        <Card className="text-center p-8 sm:p-12 space-y-5 border-emerald-200 dark:border-emerald-900/60 bg-gradient-to-b from-white to-emerald-50/20 dark:from-slate-900 dark:to-slate-950">
+        <Card className="bg-white text-center p-8 sm:p-12 space-y-5 border-emerald-200 dark:border-emerald-900/60">
           <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
             <CheckCircle2 className="h-8 w-8" />
           </div>
 
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Submission Validated & Queued!
+              Form checked. Nothing was submitted.
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-              Your submission for &ldquo;<strong>{title}</strong>&rdquo; has passed all client-side validation rules and will enter the review pipeline once Firebase Storage is connected in Milestone 2.
+              Your entry for &ldquo;<strong>{title}</strong>&rdquo; passed validation, but it was not uploaded or saved anywhere. Submissions open in a later release.
             </p>
           </div>
 
@@ -253,7 +250,7 @@ export default function SubmitResourcePage() {
                 >
                   {availableSubjects.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.code} - {s.name}
+                      {s.courseCode || s.code ? `${s.courseCode || s.code} - ` : ''}{s.title || s.name}
                     </option>
                   ))}
                   <option value="other">Other / Not listed</option>

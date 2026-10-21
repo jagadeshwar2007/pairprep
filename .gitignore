@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+!.env.example
+
+# firebase
+.firebase/
+.firebaserc
+*-debug.log
+service-account*.json

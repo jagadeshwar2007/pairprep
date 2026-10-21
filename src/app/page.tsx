@@ -19,20 +19,13 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ACADEMIC_YEARS, BRANCHES } from '@/data/academicData';
-import { DEMO_RESOURCES } from '@/data/resourcesData';
 import { YearCard } from '@/components/academic/YearCard';
 import { BranchCard } from '@/components/academic/BranchCard';
-import { ResourceCard } from '@/components/resources/ResourceCard';
+import { FeaturedResources } from '@/components/resources/FeaturedResources';
 import { SearchModal } from '@/components/layout/SearchModal';
 
 export default function HomePage() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState('all');
-
-  const filteredDemoResources =
-    selectedBranchFilter === 'all'
-      ? DEMO_RESOURCES.slice(0, 6)
-      : DEMO_RESOURCES.filter((r) => r.branchId === selectedBranchFilter).slice(0, 6);
 
   const academicTools = [
     {
@@ -253,61 +246,20 @@ export default function HomePage() {
 
       {/* ===================== RECENTLY ADDED RESOURCES ===================== */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              <Sparkles className="h-4 w-4" />
-              <span>Updated Course Sets</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
-              Recently Added Academic Resources
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Sample lecture summaries, midsem papers, and lab manuals submitted for testing.
-            </p>
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+            <Sparkles className="h-4 w-4" />
+            <span>Fresh from the community</span>
           </div>
-
-          {/* Quick branch pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-            <button
-              onClick={() => setSelectedBranchFilter('all')}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                selectedBranchFilter === 'all'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              All ({DEMO_RESOURCES.length})
-            </button>
-            <button
-              onClick={() => setSelectedBranchFilter('cse')}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                selectedBranchFilter === 'cse'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              CSE
-            </button>
-            <button
-              onClick={() => setSelectedBranchFilter('me')}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                selectedBranchFilter === 'me'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Mechanical
-            </button>
-          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+            Recently Added Academic Resources
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Notes, papers and lab material shared by students and approved by moderators.
+          </p>
         </div>
 
-        {/* Resource Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredDemoResources.map((res) => (
-            <ResourceCard key={res.id} resource={res} showSubjectBadge />
-          ))}
-        </div>
+        <FeaturedResources />
       </section>
 
       {/* ===================== ACADEMIC TOOLS ===================== */}

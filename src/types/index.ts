@@ -40,27 +40,36 @@ export type ResourceCategory =
   | 'pyq'
   | 'midsem'
   | 'endsem'
+  | 'lecture'
   | 'lab'
   | 'practice'
   | 'syllabus'
-  | 'reference';
+  | 'reference'
+  | 'other';
 
+/** A published resource as shown in the hub (backed by public.resources). */
 export interface ResourceItem {
   id: string;
   title: string;
+  /** Catalog slug of the subject, e.g. 'cs-13101' (matches SUBJECTS[].id). */
   subjectId: string;
   subjectName: string;
   subjectCode: string;
+  /** Catalog slug of the branch, e.g. 'cse' (matches BRANCHES[].id). */
   branchId: string;
   branchCode: string;
   semester: number;
   yearId: AcademicYearId;
   category: ResourceCategory;
-  fileType: 'pdf' | 'doc' | 'zip' | 'link';
+  fileType: 'pdf' | 'doc' | 'image' | 'link';
   fileSize?: string;
-  downloadUrl: string;
-  previewUrl?: string;
-  author: string;
+  /** True when the file is stored in Supabase Storage; false for an external link. */
+  hosted: boolean;
+  /** Only set for external resources. Rendered as a plain link, never proxied or redirected. */
+  externalUrl?: string;
+  /** Public contributor credit. Only present when the contributor chose to be credited. */
+  author?: string;
+  /** ISO 8601 UTC timestamp; formatted in the viewer's locale by <LocalDate>. */
   uploadedAt: string;
   downloadsCount: number;
   verified: boolean;

@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { ACADEMIC_YEARS, BRANCHES, SUBJECTS } from '@/data/academicData';
-import { DEMO_RESOURCES } from '@/data/resourcesData';
+import { getSubjectResources } from '@/lib/data/resources';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { Breadcrumbs } from '@/components/academic/Breadcrumbs';
 import { SubjectResourceView } from '@/components/resources/SubjectResourceView';
 import { Badge } from '@/components/ui/Badge';
-import { Award } from 'lucide-react';
+import type { ResourceItem, Subject } from '@/types';
+import { Award, AlertTriangle, DatabaseZap } from 'lucide-react';
 
 interface SubjectDetailsPageProps {
   params: Promise<{
@@ -51,9 +53,6 @@ export default async function SubjectDetailsPage({ params }: SubjectDetailsPageP
     notFound();
   }
 
-  // Get resources for this subject
-  const subjectResources = DEMO_RESOURCES.filter((r) => r.subjectId === subject.id);
-
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <Breadcrumbs
@@ -84,9 +83,6 @@ export default async function SubjectDetailsPage({ params }: SubjectDetailsPageP
             </div>
           </div>
 
-          <span className="text-xs font-medium text-slate-500">
-            {subjectResources.length} Materials catalogued
-          </span>
         </div>
 
         <div>
@@ -121,7 +117,63 @@ export default async function SubjectDetailsPage({ params }: SubjectDetailsPageP
       </div>
 
       {/* Interactive Category Filter and Resources Grid */}
-      <SubjectResourceView subject={subject} resources={subjectResources} />
+      <Suspense fallback={<ResourcesSkeleton />}>
+        <SubjectResources subject={subject} />
+      </Suspense>
+    </div>
+  );
+}
+
+/** Live data from the database; kept inside Suspense so the rest of the page stays static. */
+async function SubjectResources({ subject }: { subject: Subject }) {
+  if (!isSupabaseConfigured()) {
+    return (
+      <StatusPanel icon={DatabaseZap} title="Resources are not available yet">
+        The backend is not configured for this deployment (missing Supabase environment variables).
+      </StatusPanel>
+    );
+  }
+  let resources: ResourceItem[];
+  try {
+    resources = await getSubjectResources(subject.id);
+  } catch (error) {
+    console.error('[resources] could not load subject resources:', (error as Error).message);
+    return (
+      <StatusPanel icon={AlertTriangle} title="We couldn't load resources right now">
+        Please refresh in a moment. If this keeps happening, tell an admin.
+      </StatusPanel>
+    );
+  }
+  return <SubjectResourceView subject={subject} resources={resources} />;
+}
+
+function StatusPanel({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div role="status" className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center space-y-2">
+      <Icon className="mx-auto h-7 w-7 text-amber-500" />
+      <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{title}</h3>
+      <p className="text-xs text-slate-500 max-w-md mx-auto">{children}</p>
+    </div>
+  );
+}
+
+function ResourcesSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading resources">
+      <div className="h-10 w-full max-w-md rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-56 rounded-2xl bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
+        ))}
+      </div>
     </div>
   );
 }

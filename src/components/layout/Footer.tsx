@@ -6,16 +6,35 @@ import { GraduationCap, Mail, Sparkles } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { getBrowserClient } from '@/lib/supabase/client';
+import { describeDbError } from '@/lib/errors';
 
 export function Footer() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [contactEmail, setContactEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const { status } = useAuth();
 
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSending(true);
+    setFeedbackError(null);
+    const { error } = await getBrowserClient().rpc('submit_feedback', {
+      p_message: feedbackText,
+      p_contact_email: contactEmail.trim() || null,
+    });
+    setSending(false);
+    if (error) {
+      setFeedbackError(describeDbError(error).message);
+      return;
+    }
     setFeedbackSent(true);
+    setFeedbackText('');
   };
 
   return (
@@ -144,7 +163,7 @@ export function Footer() {
 
               <div className="pt-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 p-2.5 border border-amber-200/60 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-300">
                 <span className="font-semibold block mb-0.5">Disclaimer:</span>
-                Sample and demonstration data shown for platform preview. Not an official publication of MNNIT administration.
+                Resources are shared by students and reviewed by volunteer moderators. Not an official publication of MNNIT administration.
               </div>
             </div>
           </div>
@@ -153,8 +172,6 @@ export function Footer() {
             <p>© 2026 Pairprep. Built for the student community at MNNIT Allahabad.</p>
             <div className="flex items-center gap-4">
               <span>Crafted for engineering peers</span>
-              <span>•</span>
-              <span className="text-slate-400">Milestone 1 Release</span>
             </div>
           </div>
         </div>
@@ -172,13 +189,27 @@ export function Footer() {
             <div className="h-10 w-10 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
               ✓
             </div>
-            <h4 className="font-semibold text-slate-900 dark:text-white">Feedback Logged!</h4>
+            <h4 className="font-semibold text-slate-900 dark:text-white">Feedback sent</h4>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
               Thank you for helping us refine Pairprep for MNNIT students.
             </p>
-            <Button variant="primary" onClick={() => setFeedbackOpen(false)} className="w-full mt-2">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setFeedbackOpen(false);
+                setFeedbackSent(false);
+              }}
+              className="w-full mt-2"
+            >
               Close
             </Button>
+          </div>
+        ) : status !== 'signed_in' ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Sign in to send feedback, so we can follow up and keep spam out.
+            </p>
+            <GoogleSignInButton />
           </div>
         ) : (
           <form onSubmit={handleFeedbackSubmit} className="space-y-4">
@@ -188,7 +219,7 @@ export function Footer() {
               </label>
               <Input
                 type="email"
-                placeholder="name@mnnit.ac.in"
+                placeholder="Only if you want a reply at a different address"
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
               />
@@ -206,8 +237,11 @@ export function Footer() {
                 onChange={(e) => setFeedbackText(e.target.value)}
               />
             </div>
-            <Button type="submit" variant="primary" className="w-full">
-              Send Feedback (Demo)
+            {feedbackError && (
+              <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">{feedbackError}</p>
+            )}
+            <Button type="submit" variant="primary" className="w-full" isLoading={sending}>
+              Send feedback
             </Button>
           </form>
         )}

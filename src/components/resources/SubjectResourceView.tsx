@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { Subject, ResourceCategory, ResourceItem } from '@/types';
 import { ResourceCard } from '@/components/resources/ResourceCard';
 import { Button } from '@/components/ui/Button';
+import { CATEGORY_LABELS } from '@/data/resourcesData';
 import { Input } from '@/components/ui/Input';
 import {
   Search,
   FileText,
   Upload,
-  Info,
 } from 'lucide-react';
 
 interface SubjectResourceViewProps {
@@ -24,46 +24,10 @@ export function SubjectResourceView({ subject, resources }: SubjectResourceViewP
 
   const categories: Array<{ id: ResourceCategory | 'all'; label: string; count: number }> = [
     { id: 'all', label: 'All Resources', count: resources.length },
-    {
-      id: 'notes',
-      label: 'Study Notes',
-      count: resources.filter((r) => r.category === 'notes').length,
-    },
-    {
-      id: 'pyq',
-      label: 'Previous-Year Questions',
-      count: resources.filter((r) => r.category === 'pyq').length,
-    },
-    {
-      id: 'midsem',
-      label: 'Midsem Papers',
-      count: resources.filter((r) => r.category === 'midsem').length,
-    },
-    {
-      id: 'endsem',
-      label: 'Endsem Papers',
-      count: resources.filter((r) => r.category === 'endsem').length,
-    },
-    {
-      id: 'lab',
-      label: 'Lab Materials',
-      count: resources.filter((r) => r.category === 'lab').length,
-    },
-    {
-      id: 'practice',
-      label: 'Practice Questions',
-      count: resources.filter((r) => r.category === 'practice').length,
-    },
-    {
-      id: 'syllabus',
-      label: 'Syllabus',
-      count: resources.filter((r) => r.category === 'syllabus').length,
-    },
-    {
-      id: 'reference',
-      label: 'Reference Materials',
-      count: resources.filter((r) => r.category === 'reference').length,
-    },
+    ...(Object.keys(CATEGORY_LABELS) as ResourceCategory[])
+      .map((id) => ({ id, label: CATEGORY_LABELS[id].label, count: resources.filter((r) => r.category === id).length }))
+      // Hide empty categories so the filter row stays short; always keep the active one visible.
+      .filter((c) => c.count > 0 || c.id === selectedCategory),
   ];
 
   const filteredResources = useMemo(() => {
@@ -81,14 +45,6 @@ export function SubjectResourceView({ subject, resources }: SubjectResourceViewP
 
   return (
     <div className="space-y-8">
-      {/* Demonstration Data Banner */}
-      <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/40 p-4 text-xs text-amber-900 dark:text-amber-200 flex gap-3 items-start">
-        <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold">Demonstration Data Notice:</span> The notes, midsem questions, and tutorial files listed below are sample representations for preview and architecture validation. They are not official administrative publications of MNNIT Allahabad.
-        </div>
-      </div>
-
       {/* Filter and Search Bar */}
       <div className="space-y-4">
         {/* Search input & contribution CTA */}
@@ -103,7 +59,7 @@ export function SubjectResourceView({ subject, resources }: SubjectResourceViewP
             />
           </div>
 
-          <Link href="/submit">
+          <Link href={`/submit?subject=${subject.id}`}>
             <Button variant="primary" size="md" className="w-full sm:w-auto">
               <Upload className="h-4 w-4 mr-2" />
               Submit Notes for this Course
@@ -169,7 +125,7 @@ export function SubjectResourceView({ subject, resources }: SubjectResourceViewP
                 Show All Categories ({resources.length})
               </Button>
             )}
-            <Link href="/submit">
+            <Link href={`/submit?subject=${subject.id}`}>
               <Button variant="primary" size="sm">
                 <Upload className="h-3.5 w-3.5 mr-1.5" />
                 Submit Resource Now

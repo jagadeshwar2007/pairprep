@@ -5,14 +5,11 @@ import { ResourceItem } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { CATEGORY_LABELS } from '@/data/resourcesData';
-import {
-  Download,
-  Eye,
-  CheckCircle2,
-  Flag,
-} from 'lucide-react';
+import { describeExternalHost } from '@/lib/files/urls';
+import { Download, Eye, CheckCircle2, Flag, ExternalLink } from 'lucide-react';
 import { ResourcePreviewModal } from './ResourcePreviewModal';
 import { ReportResourceModal } from './ReportResourceModal';
+import { BookmarkButton } from './BookmarkButton';
 
 interface ResourceCardProps {
   resource: ResourceItem;
@@ -22,17 +19,12 @@ interface ResourceCardProps {
 export function ResourceCard({ resource }: ResourceCardProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   const categoryInfo = CATEGORY_LABELS[resource.category] || {
     label: resource.category,
     badgeColor: 'bg-slate-100 text-slate-800',
   };
-
-  const handleDownload = () => {
-    setDownloadSuccess(true);
-    setTimeout(() => setDownloadSuccess(false), 3000);
-  };
+  const external = !resource.hosted && resource.externalUrl ? describeExternalHost(resource.externalUrl) : null;
 
   return (
     <>
@@ -43,33 +35,27 @@ export function ResourceCard({ resource }: ResourceCardProps) {
         <div>
           {/* Header Row: Category Badge + File Type + Verification */}
           <div className="flex items-center justify-between gap-2 mb-3">
-            <span
-              className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${categoryInfo.badgeColor}`}
-            >
+            <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${categoryInfo.badgeColor}`}>
               {categoryInfo.label}
             </span>
 
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-mono uppercase font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                {resource.fileType}
+                {external ? 'external' : resource.fileType}
               </span>
               {resource.verified && (
-                <span
-                  title="Verified by MNNIT Student Reviewers"
-                  className="text-emerald-600 dark:text-emerald-400"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
+                <span title="Reviewed and approved by Pairprep moderators" className="text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" aria-label="Verified" />
                 </span>
               )}
+              <BookmarkButton resourceId={resource.id} />
             </div>
           </div>
 
-          {/* Title */}
           <h4 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
             {resource.title}
           </h4>
 
-          {/* Subject & Branch Info */}
           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <span className="font-medium text-slate-700 dark:text-slate-300">
               {resource.branchCode} • Sem {resource.semester}
@@ -80,18 +66,13 @@ export function ResourceCard({ resource }: ResourceCardProps) {
             </span>
           </div>
 
-          {resource.description && (
-            <p className="mt-2 text-xs text-slate-500 line-clamp-2">
-              {resource.description}
-            </p>
-          )}
+          {resource.description && <p className="mt-2 text-xs text-slate-500 line-clamp-2">{resource.description}</p>}
 
-          {/* Tags */}
           {resource.tags && resource.tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1">
-              {resource.tags.map((tag, idx) => (
+              {resource.tags.map((tag) => (
                 <span
-                  key={idx}
+                  key={tag}
                   className="text-[10px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-slate-500 border border-slate-200/50 dark:border-slate-800"
                 >
                   #{tag}
@@ -101,11 +82,10 @@ export function ResourceCard({ resource }: ResourceCardProps) {
           )}
         </div>
 
-        {/* Footer Meta & Actions */}
         <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
           <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3">
             <span>
-              {resource.fileSize ? `${resource.fileSize} • ` : ''}
+              {external ? `Hosted on ${external.label} • ` : resource.fileSize ? `${resource.fileSize} • ` : ''}
               {resource.downloadsCount.toLocaleString()} downloads
             </span>
             <button
@@ -118,49 +98,36 @@ export function ResourceCard({ resource }: ResourceCardProps) {
             </button>
           </div>
 
-          {downloadSuccess && (
-            <div className="mb-2 p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-center text-xs font-medium animate-pulse">
-              Download initiated! (Demo storage link)
-            </div>
-          )}
-
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => setPreviewOpen(true)}
-            >
+            <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setPreviewOpen(true)}>
               <Eye className="h-3.5 w-3.5 mr-1.5 text-indigo-500" />
               Preview
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={handleDownload}
-            >
-              <Download className="h-3.5 w-3.5 mr-1.5" />
-              Download
-            </Button>
+            {resource.hosted ? (
+              <a
+                href={`/api/resources/${resource.id}/file?download=1`}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download
+              </a>
+            ) : (
+              <a
+                href={resource.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer nofollow ugc"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Open link
+              </a>
+            )}
           </div>
         </div>
       </Card>
 
-      {/* Preview Modal */}
-      <ResourcePreviewModal
-        resource={resource}
-        isOpen={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        onDownload={handleDownload}
-      />
-
-      {/* Report Modal */}
-      <ReportResourceModal
-        resource={resource}
-        isOpen={reportOpen}
-        onClose={() => setReportOpen(false)}
-      />
+      <ResourcePreviewModal resource={resource} isOpen={previewOpen} onClose={() => setPreviewOpen(false)} />
+      <ReportResourceModal resource={resource} isOpen={reportOpen} onClose={() => setReportOpen(false)} />
     </>
   );
 }

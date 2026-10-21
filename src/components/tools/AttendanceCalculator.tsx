@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { getAcademicSemesterContext } from '@/lib/calendarAttendanceHelper';
+import { attendanceStanding } from '@/lib/attendance';
+import { SavedCourses } from './SavedCourses';
 import { SemesterType } from '@/types/calendar';
 import {
   CheckCircle,
@@ -31,24 +33,12 @@ export function AttendanceCalculator() {
   const safeTotal = Math.max(0, Number(total) || 0);
   const targetPct = Math.min(100, Math.max(1, Number(minPercentage) || 75));
 
-  // Current percentage
-  const currentPercentage =
-    safeTotal > 0 ? (safeAttended / safeTotal) * 100 : 0;
-  const isSatisfied = currentPercentage >= targetPct;
-
-  // If attended >= target: calculate how many classes can be missed:
-  // (attended) / (total + x) >= target/100  =>  x <= (attended * 100 / target) - total
-  const canSkip =
-    safeTotal > 0 && isSatisfied
-      ? Math.floor((safeAttended * 100) / targetPct - safeTotal)
-      : 0;
-
-  // If attended < target: calculate how many consecutive classes must be attended:
-  // (attended + y) / (total + y) >= target/100  =>  y >= (target*total - 100*attended) / (100 - target)
-  const mustAttend =
-    safeTotal > 0 && !isSatisfied && targetPct < 100
-      ? Math.ceil((targetPct * safeTotal - 100 * safeAttended) / (100 - targetPct))
-      : 0;
+  const {
+    percentage: currentPercentage,
+    satisfied: isSatisfied,
+    canSkip,
+    mustAttend,
+  } = attendanceStanding(safeAttended, safeTotal, targetPct);
 
   const handleReset = () => {
     setAttended(0);
@@ -217,6 +207,16 @@ export function AttendanceCalculator() {
           </div>
         </Card>
       </div>
+
+      <SavedCourses
+        current={{ attended: safeAttended, total: safeTotal, minPercent: targetPct, semesterType: selectedSemester === 'Even' ? 'Even' : 'Odd' }}
+        onLoad={(snapshot) => {
+          setAttended(snapshot.attended);
+          setTotal(snapshot.total);
+          setMinPercentage(snapshot.minPercent);
+          setSelectedSemester(snapshot.semesterType);
+        }}
+      />
 
       {/* Official MNNIT Academic Calendar Context & Decoupling Notice */}
       <Card className="p-5 sm:p-6 border-slate-200 dark:border-slate-800 space-y-4">

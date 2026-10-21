@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { SUBJECTS, BRANCHES, ACADEMIC_YEARS } from '@/data/academicData';
-import { DEMO_RESOURCES, CATEGORY_LABELS } from '@/data/resourcesData';
+import { CATEGORY_LABELS } from '@/data/resourcesData';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { getBrowserClient } from '@/lib/supabase/client';
+import { searchResources } from '@/lib/data/resource-mapper';
+import type { ResourceItem } from '@/types';
 import { OFFICIAL_ACADEMIC_CALENDAR_EVENTS, CATEGORY_CONFIG } from '@/data/academicCalendarData';
 import { Search, BookOpen, FileText, ArrowRight, Layers, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
@@ -17,9 +21,31 @@ interface SearchModalProps {
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
+  const [liveResources, setLiveResources] = useState<{ query: string; items: ResourceItem[]; failed: boolean } | null>(null);
+
+  // Published resources are searched live in the database (RLS exposes only published rows).
+  useEffect(() => {
+    const q = query.trim();
+    if (!isOpen || q.length < 2 || !isSupabaseConfigured()) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      searchResources(getBrowserClient(), q, 5)
+        .then((items) => !cancelled && setLiveResources({ query: q, items, failed: false }))
+        .catch((error: Error) => {
+          console.error('[search] resource search failed:', error.message);
+          if (!cancelled) setLiveResources({ query: q, items: [], failed: true });
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, isOpen]);
+
+  const resourceMatches = liveResources && liveResources.query === query.trim() ? liveResources : null;
 
   const filteredResults = useMemo(() => {
-    if (!query.trim()) return { subjects: [], resources: [], branches: [], calendarEvents: [] };
+    if (!query.trim()) return { subjects: [], resources: [] as ResourceItem[], branches: [], calendarEvents: [] };
     const q = query.toLowerCase().trim();
 
     const matchedSubjects = SUBJECTS.filter(
@@ -29,12 +55,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         s.topics.some((t) => t.toLowerCase().includes(q))
     ).slice(0, 5);
 
-    const matchedResources = DEMO_RESOURCES.filter(
-      (r) =>
-        r.title.toLowerCase().includes(q) ||
-        r.subjectName.toLowerCase().includes(q) ||
-        r.tags?.some((t) => t.toLowerCase().includes(q))
-    ).slice(0, 5);
+    const matchedResources = resourceMatches?.items ?? [];
 
     const matchedBranches = BRANCHES.filter(
       (b) =>
@@ -56,7 +77,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       branches: matchedBranches,
       calendarEvents: matchedCalendarEvents,
     };
-  }, [query]);
+  }, [query, resourceMatches]);
 
   const hasResults =
     filteredResults.subjects.length > 0 ||

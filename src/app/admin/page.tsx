@@ -1,361 +1,130 @@
-'use client';
-
-import React, { useState } from 'react';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import {
-  ShieldAlert,
-  Upload,
-  FileCheck2,
-  Check,
-  X,
-  Clock,
-  Calendar,
-} from 'lucide-react';
+import { LocalDate } from '@/components/ui/LocalDate';
+import { AccessDenied, ErrorState, SetupNotice } from '@/components/ui/PageStates';
+import { requireUser } from '@/lib/auth/session';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { createClient } from '@/lib/supabase/server';
+import { can, isStaff, landingPath, visibleAdminSections } from '@/lib/auth/permissions';
+import type { AuditRow } from '@/types/backend';
 
-export default function AdminPreviewDashboard() {
-  const [activeTab, setActiveTab] = useState<'queue' | 'bulk' | 'catalog' | 'contributors' | 'calendar'>('queue');
-  const [pendingSubmissions, setPendingSubmissions] = useState([
-    {
-      id: 'sub-1',
-      title: 'CS13101 AVL Tree Rotations & Deletions Tutorial',
-      author: 'Aakash Verma (Reg. 20234012)',
-      branch: 'CSE',
-      semester: 3,
-      category: 'Study Notes',
-      fileType: 'PDF (3.4 MB)',
-      timeAgo: '2 hours ago',
-      status: 'pending',
-    },
-    {
-      id: 'sub-2',
-      title: 'ME13101 Thermodynamics 2024 Midsem Question Paper',
-      author: 'Priya Sharma (Reg. 20235088)',
-      branch: 'ME',
-      semester: 3,
-      category: 'Midsem Papers',
-      fileType: 'PDF (1.8 MB)',
-      timeAgo: '4 hours ago',
-      status: 'pending',
-    },
-    {
-      id: 'sub-3',
-      title: 'CS15101 Banker Algorithm & Deadlock Avoidance Code Lab',
-      author: 'Rohan Gupta (Reg. 20224110)',
-      branch: 'CSE',
-      semester: 5,
-      category: 'Lab Materials',
-      fileType: 'ZIP (5.1 MB)',
-      timeAgo: '1 day ago',
-      status: 'pending',
-    },
+export default function AdminOverviewPage() {
+  return <Overview />;
+}
+
+async function Overview() {
+  if (!isSupabaseConfigured()) return <SetupNotice />;
+  const access = await requireUser('/admin');
+  if (!isStaff(access)) return <AccessDenied />;
+
+  // Moderators go straight to their queue and content admins to resources; the full
+  // overview is the super admin's landing page.
+  const landing = landingPath(access);
+  if (landing !== '/admin') redirect(landing);
+
+  const supabase = await createClient();
+  const head = (table: string, filter?: (q: any) => any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const q = supabase.from(table).select('*', { count: 'exact', head: true });
+    return filter ? filter(q) : q;
+  };
+
+  const [pending, inReview, changes, approved, rejected, published, drafts, archived, reports, users, suspended, audit] = await Promise.all([
+    can(access, 'contributions.read') ? head('contributions', (q) => q.eq('status', 'pending')) : null,
+    can(access, 'contributions.read') ? head('contributions', (q) => q.eq('status', 'in_review')) : null,
+    can(access, 'contributions.read') ? head('contributions', (q) => q.eq('status', 'changes_requested')) : null,
+    can(access, 'contributions.read') ? head('contributions', (q) => q.eq('status', 'approved')) : null,
+    can(access, 'contributions.read') ? head('contributions', (q) => q.eq('status', 'rejected')) : null,
+    head('resources', (q) => q.eq('status', 'published')),
+    can(access, 'resources.edit') || can(access, 'resources.create') ? head('resources', (q) => q.eq('status', 'draft')) : null,
+    can(access, 'resources.edit') || can(access, 'resources.create') ? head('resources', (q) => q.eq('status', 'archived')) : null,
+    can(access, 'resources.edit') ? head('resource_reports', (q) => q.eq('status', 'open')) : null,
+    can(access, 'users.read') ? head('profiles') : null,
+    can(access, 'users.read') ? head('profiles', (q) => q.eq('account_status', 'suspended')) : null,
+    can(access, 'audit.read')
+      ? supabase.from('audit_logs').select('id, actor_id, action, target_type, target_id, metadata, created_at').order('created_at', { ascending: false }).limit(10)
+      : null,
   ]);
 
-  const handleApprove = (id: string) => {
-    setPendingSubmissions((prev) => prev.filter((item) => item.id !== id));
-  };
+  const failed = [pending, inReview, changes, approved, rejected, published, drafts, archived, reports, users, suspended, audit].find((r) => r?.error);
+  if (failed?.error) {
+    console.error('[admin] overview failed:', failed.error.message);
+    return <ErrorState title="We couldn't load the overview" />;
+  }
 
-  const handleReject = (id: string) => {
-    setPendingSubmissions((prev) => prev.filter((item) => item.id !== id));
-  };
+  const stat = (label: string, r: { count: number | null } | null, href: string, tone = 'text-slate-900 dark:text-white') =>
+    r ? { label, value: r.count ?? 0, href, tone } : null;
+  const cards = [
+    stat('Pending review', pending, '/admin/moderation?status=pending', 'text-amber-600'),
+    stat('In review', inReview, '/admin/moderation?status=in_review', 'text-indigo-600'),
+    stat('Changes requested', changes, '/admin/moderation?status=changes_requested', 'text-orange-600'),
+    stat('Approved', approved, '/admin/moderation?status=approved', 'text-emerald-600'),
+    stat('Rejected', rejected, '/admin/moderation?status=rejected', 'text-rose-600'),
+    stat('Published resources', published, '/admin/resources?status=published'),
+    stat('Draft resources', drafts, '/admin/resources?status=draft'),
+    stat('Archived resources', archived, '/admin/resources?status=archived'),
+    stat('Open reports', reports, '/admin/reports', 'text-amber-600'),
+    stat('Accounts', users, '/admin/users'),
+    stat('Suspended accounts', suspended, '/admin/users?status=suspended', 'text-rose-600'),
+  ].filter((c): c is NonNullable<typeof c> => c !== null);
+
+  const activity = ((audit?.data ?? []) as AuditRow[]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Security Warning Notice */}
-      <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 dark:border-amber-700/60 dark:bg-amber-950/40 p-4 text-xs text-amber-900 dark:text-amber-200 flex gap-3 items-start">
-        <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="font-bold text-sm">
-            Administrative Prototype & Architecture Preview
-          </p>
-          <p className="leading-relaxed">
-            This route is unlinked from public navigation. Real authentication, Google Cloud IAM, and server-side RBAC (Role-Based Access Control) will secure this endpoint in Milestone 2. No claims of security are made for this prototype interface.
-          </p>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Overview</h2>
+        <p className="text-sm text-slate-500">Everything that needs attention across Pairprep.</p>
       </div>
 
-      {/* Admin Dashboard Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            <span>Pairprep Operations</span>
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-1">
-            Academic Content Administration
-          </h1>
-          <p className="text-sm text-slate-500">
-            Submission moderation, bulk imports, catalog verification, and contributor management.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setActiveTab('bulk')}>
-            <Upload className="h-3.5 w-3.5 mr-1.5" />
-            Bulk CSV Import
-          </Button>
-          <Button variant="primary" size="sm" onClick={() => setActiveTab('queue')}>
-            <FileCheck2 className="h-3.5 w-3.5 mr-1.5" />
-            Pending Queue ({pendingSubmissions.length})
-          </Button>
-        </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {cards.map((c) => (
+          <Link key={c.label} href={c.href}>
+            <Card hoverEffect className="p-4">
+              <span className="block text-[11px] font-semibold uppercase text-slate-400">{c.label}</span>
+              <span className={`mt-1 block text-3xl font-black ${c.tone}`}>{c.value}</span>
+            </Card>
+          </Link>
+        ))}
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <span className="text-[11px] font-semibold uppercase text-slate-400 block">
-            Pending Submissions
-          </span>
-          <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
-            {pendingSubmissions.length}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Recent activity</h3>
+            {can(access, 'audit.read') && <Link href="/admin/audit" className="text-xs font-semibold text-indigo-600 hover:underline">Full audit log</Link>}
           </div>
-          <span className="text-[11px] text-slate-500">Awaiting peer review</span>
-        </Card>
-        <Card className="p-4">
-          <span className="text-[11px] font-semibold uppercase text-slate-400 block">
-            Catalogued Subjects
-          </span>
-          <div className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-            24
-          </div>
-          <span className="text-[11px] text-emerald-600 font-medium">8 Branches mapped</span>
-        </Card>
-        <Card className="p-4">
-          <span className="text-[11px] font-semibold uppercase text-slate-400 block">
-            Reported Files
-          </span>
-          <div className="text-3xl font-black text-amber-500 mt-1">
-            0
-          </div>
-          <span className="text-[11px] text-slate-500">All links verified healthy</span>
-        </Card>
-        <Card className="p-4">
-          <span className="text-[11px] font-semibold uppercase text-slate-400 block">
-            Student Contributors
-          </span>
-          <div className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-            18
-          </div>
-          <span className="text-[11px] text-slate-500">MNNIT batches 2022-26</span>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <button
-          onClick={() => setActiveTab('queue')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'queue'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          Review Submissions Queue ({pendingSubmissions.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('bulk')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'bulk'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          Bulk Import & Ingestion
-        </button>
-        <button
-          onClick={() => setActiveTab('catalog')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'catalog'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          Subject & Branch Registry
-        </button>
-        <button
-          onClick={() => setActiveTab('calendar')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'calendar'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          Official Academic Calendar (2026–27)
-        </button>
-      </div>
-
-      {/* Tab Content: Submission Queue */}
-      {activeTab === 'queue' && (
-        <Card className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Pending Submissions Awaiting Approval
-            </h3>
-            <span className="text-xs text-slate-400">
-              Check syllabus alignment before publishing
-            </span>
-          </div>
-
-          {pendingSubmissions.length > 0 ? (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {pendingSubmissions.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="primary">{sub.category}</Badge>
-                      <Badge variant="neutral">{sub.branch} Sem {sub.semester}</Badge>
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {sub.timeAgo}
-                      </span>
-                    </div>
-
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {sub.title}
-                    </h4>
-
-                    <p className="text-xs text-slate-500">
-                      Submitted by: <strong className="text-slate-700 dark:text-slate-300">{sub.author}</strong> • {sub.fileType}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleApprove(sub.id)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                      <Check className="h-3.5 w-3.5 mr-1" /> Approve
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleReject(sub.id)}
-                      className="hover:text-rose-600 hover:border-rose-300"
-                    >
-                      <X className="h-3.5 w-3.5 mr-1" /> Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {activity.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-500">No activity recorded yet.</p>
           ) : (
-            <div className="text-center py-12 text-sm text-slate-500">
-              Queue is empty! All submitted student materials have been reviewed.
-            </div>
+            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+              {activity.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                  <span>
+                    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">{a.action}</code>{' '}
+                    <span className="text-slate-500">{a.target_type}{a.target_id ? ` ${a.target_id.slice(0, 8)}…` : ''}</span>
+                  </span>
+                  <LocalDate iso={a.created_at} withTime className="text-xs text-slate-400" />
+                </li>
+              ))}
+            </ul>
           )}
         </Card>
-      )}
 
-      {/* Tab Content: Bulk Import Mockup */}
-      {activeTab === 'bulk' && (
-        <Card className="p-6 space-y-4">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Bulk Courseware & PYQ Ingestion (CSV / JSON)
-          </h3>
-          <p className="text-xs text-slate-500">
-            For academic convenors to batch-upload 5-year question papers and textbook syllabi from departmental zip archives.
-          </p>
-
-          <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center space-y-3">
-            <Upload className="h-8 w-8 mx-auto text-indigo-500" />
-            <div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                Upload Manifest CSV or ZIP archive
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Schema: `subject_code, exam_type, year, semester, storage_path`
-              </p>
-            </div>
-            <Button variant="outline" size="sm">
-              Select Batch Manifest File (Demo)
-            </Button>
-          </div>
+        <Card>
+          <h3 className="mb-3 text-sm font-bold text-slate-900 dark:text-white">Jump to</h3>
+          <ul className="space-y-2">
+            {visibleAdminSections(access).map((s) => (
+              <li key={s.href}>
+                <Link href={s.href} className="block rounded-xl p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                  <span className="block text-sm font-semibold text-slate-900 dark:text-white">{s.label}</span>
+                  <span className="text-xs text-slate-500">{s.description}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </Card>
-      )}
-
-      {/* Tab Content: Registry */}
-      {activeTab === 'catalog' && (
-        <Card className="p-6 space-y-4">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            MNNIT Department & Subject Ordinance Registry
-          </h3>
-          <p className="text-xs text-slate-500">
-            Configure branches, credit mappings, and semester prerequisites.
-          </p>
-
-          <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
-            Registry editing will connect directly to Firestore collection `branches` and `subjects` in Milestone 2.
-          </div>
-        </Card>
-      )}
-
-      {/* Tab Content: Academic Calendar Admin */}
-      {activeTab === 'calendar' && (
-        <Card className="p-6 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-indigo-500" />
-                MNNIT Academic Calendar Administration & Publishing
-              </h3>
-              <p className="text-xs text-slate-500">
-                Current active schedule: Session 2026–27 (Extracted from 2-page Dean Academic official document).
-              </p>
-            </div>
-            <Badge variant="success">Active & Published</Badge>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 space-y-1">
-              <span className="font-bold text-slate-900 dark:text-white block">
-                Odd Semester (Page 2)
-              </span>
-              <p className="text-slate-500">
-                July 9 – Dec 31, 2026 • 77 Teaching Days (Others)
-              </p>
-              <span className="text-[11px] text-emerald-600 font-medium block">
-                35 Events Extracted & Verified
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 space-y-1">
-              <span className="font-bold text-slate-900 dark:text-white block">
-                Even Semester (Page 1)
-              </span>
-              <p className="text-slate-500">
-                Jan 1 – June 30, 2027 • 71 Teaching Days
-              </p>
-              <span className="text-[11px] text-emerald-600 font-medium block">
-                29 Events Extracted & Verified
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 space-y-1">
-              <span className="font-bold text-slate-900 dark:text-white block">
-                July 2027 Transition (Page 1)
-              </span>
-              <p className="text-slate-500">
-                Bridge to 2027-28 Session • Summer Vacation End & Reg
-              </p>
-              <span className="text-[11px] text-indigo-600 font-medium block">
-                4 Events Extracted & Verified
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/30 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1">
-            <p className="font-bold">Access Control & Security Policy:</p>
-            <p className="leading-relaxed text-[11px]">
-              Only authorized Dean (Academic) administrators with verified `@mnnit.ac.in` administrative credentials will be permitted to push revised calendar addenda, reschedule midsems, or modify declared holidays once Milestone 2 Firebase RBAC is active.
-            </p>
-          </div>
-        </Card>
-      )}
+      </div>
     </div>
   );
 }

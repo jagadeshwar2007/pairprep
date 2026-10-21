@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ACADEMIC_YEARS, BRANCHES, SUBJECTS } from '@/data/academicData';
-import { DEMO_RESOURCES } from '@/data/resourcesData';
+import type { Subject } from '@/types';
+import { getResourceCounts } from '@/lib/data/resources';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { Breadcrumbs } from '@/components/academic/Breadcrumbs';
 import { SubjectCard } from '@/components/academic/SubjectCard';
 import { Badge } from '@/components/ui/Badge';
@@ -112,14 +114,9 @@ export default async function SemesterSubjectsPage({
         </div>
 
         {semesterSubjects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {semesterSubjects.map((sub) => {
-              const resCount = DEMO_RESOURCES.filter((r) => r.subjectId === sub.id).length;
-              return (
-                <SubjectCard key={sub.id} subject={sub} resourceCount={resCount} />
-              );
-            })}
-          </div>
+          <Suspense fallback={<SubjectGrid subjects={semesterSubjects} />}>
+            <SubjectGridWithCounts subjects={semesterSubjects} />
+          </Suspense>
         ) : (
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center bg-white dark:bg-slate-900">
             <BookOpen className="h-10 w-10 text-slate-400 mx-auto mb-3" />
@@ -139,4 +136,27 @@ export default async function SemesterSubjectsPage({
       </div>
     </div>
   );
+}
+
+function SubjectGrid({ subjects, counts = {} }: { subjects: Subject[]; counts?: Record<string, number> }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {subjects.map((sub) => (
+        <SubjectCard key={sub.id} subject={sub} resourceCount={counts[sub.id] ?? 0} />
+      ))}
+    </div>
+  );
+}
+
+/** Live published-resource counts. The count is decorative, so a lookup failure degrades to "no count". */
+async function SubjectGridWithCounts({ subjects }: { subjects: Subject[] }) {
+  let counts: Record<string, number> = {};
+  if (isSupabaseConfigured()) {
+    try {
+      counts = await getResourceCounts(subjects.map((s) => s.id));
+    } catch (error) {
+      console.error('[resources] could not load resource counts:', (error as Error).message);
+    }
+  }
+  return <SubjectGrid subjects={subjects} counts={counts} />;
 }

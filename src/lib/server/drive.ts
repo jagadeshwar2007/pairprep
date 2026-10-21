@@ -88,7 +88,7 @@ class GoogleDriveRestClient implements DriveClient {
         : Buffer.from(serviceAccountKey, 'base64').toString('utf8');
       this.auth = new GoogleAuth({
         credentials: JSON.parse(text),
-        scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+        scopes: ['https://www.googleapis.com/auth/drive.metadata.readonly'],
       });
     }
   }

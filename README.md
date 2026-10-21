@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pairprep — MNNIT Academic Platform
 
-## Getting Started
+> **Your Branch. Your Semester. Your Preparation.**
 
-First, run the development server:
+Pairprep is a centralized academic platform designed for all 4 years and B.Tech branches at **Motilal Nehru National Institute of Technology (MNNIT Allahabad)**. It integrates lecture notes, previous-year question papers (PYQs), midsem/endsem exams, laboratory manuals, question practice sessions, academic calculators, and the official MNNIT Academic Calendar.
+
+---
+
+## 🚀 Tech Stack
+
+* **Framework**: Next.js 16 (App Router)
+* **Language**: TypeScript
+* **Styling**: Tailwind CSS & custom shadcn-style component architecture
+* **Icons**: Lucide React
+
+---
+
+## 🛠️ Getting Started
+
+First, install dependencies (if not already installed):
+
+```bash
+npm install
+```
+
+Run the local development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📦 Project Structure
 
-## Learn More
+```text
+src/
+├── app/                  # Next.js App Router pages and layouts
+│   ├── calendar/         # Official MNNIT Academic Calendar (2026-27)
+│   ├── resources/        # 5-tier academic hierarchy (Year > Branch > Sem > Subject > Material)
+│   ├── practice/         # Question practice and assessment
+│   ├── tools/            # Attendance (75% rule), Scientific Calc, Timer, SGPA, CGPA
+│   ├── submit/           # Student resource contribution portal
+│   └── admin/            # Administrative review and moderation
+├── components/           # Reusable UI, layout, academic, and calendar components
+├── data/                 # Data catalogs (Academic curricula, resources, official calendar)
+├── lib/                  # Utility helpers and calendar-attendance bridge
+└── types/                # Strongly-typed TypeScript domain definitions
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📜 Build & Verification
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Run lint check
+npm run lint
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Build production bundle
+npm run build
+```
